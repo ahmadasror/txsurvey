@@ -46,5 +46,11 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	authed.PATCH("/forms/:id/questions/:qid", h.Question.Update)
 	authed.DELETE("/forms/:id/questions/:qid", h.Question.Delete)
 
+	// Results: responses, analytics, CSV export.
+	authed.GET("/forms/:id/responses", h.Results.ListResponses)
+	authed.GET("/forms/:id/responses/:rid", h.Results.GetResponse)
+	authed.GET("/forms/:id/analytics", h.Results.Analytics)
+	authed.GET("/forms/:id/export.csv", h.Results.ExportCSV)
+
 	_ = cfg
 }

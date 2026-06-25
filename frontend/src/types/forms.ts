@@ -96,3 +96,40 @@ export interface PublicForm {
 
 /** AnswerValue is the per-type answer payload sent on submit. */
 export type AnswerValue = string | number | boolean | string[];
+
+export interface Answer {
+  id: string;
+  response_id: string;
+  question_id: string;
+  value: AnswerValue;
+  created_at: string;
+}
+
+export interface ResponseItem {
+  id: string;
+  form_id: string;
+  completed: boolean;
+  submitted_at: string;
+  answers: Answer[];
+}
+
+export interface OptionCount {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface QuestionSummary {
+  question_id: string;
+  title: string;
+  type: QuestionType;
+  answered: number;
+  options?: OptionCount[];
+  average?: number;
+}
+
+export interface FormAnalytics {
+  response_count: number;
+  completion_rate: number;
+  questions: QuestionSummary[];
+}

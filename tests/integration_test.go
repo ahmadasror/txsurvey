@@ -78,6 +78,7 @@ func newHarness(t *testing.T) *harness {
 		Form:     handler.NewFormHandler(service.NewFormService(formRepo, questionRepo)),
 		Question: handler.NewQuestionHandler(service.NewQuestionService(formRepo, questionRepo)),
 		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo)),
+		Results:  handler.NewResultsHandler(service.NewResultsService(formRepo, questionRepo, responseRepo)),
 	}
 	return &harness{t: t, pool: pool, engine: router.Setup(cfg, h, jwtMgr), jwt: jwtMgr, userID: userID}
 }
@@ -187,11 +188,128 @@ func TestFormAndQuestionFlow(t *testing.T) {
 	}
 }
 
+// TestE2EHappyPath is the locked end-to-end flow:
+// create -> add questions -> publish -> submit 2 responses ->
+// list responses -> analytics -> export.csv.
+func TestE2EHappyPath(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "NPS Survey"}, &form)
+
+	var name, rate struct {
+		ID string `json:"id"`
+	}
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Your name", "required": true}, &name)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "rating", "title": "Rate us", "metadata": map[string]any{"scale": 5}}, &rate)
+
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+
+	// Two submissions: (Alice,5) and (Bob,3) -> avg rating 4.
+	for _, sub := range []struct {
+		who    string
+		rating int
+	}{{"Alice", 5}, {"Bob", 3}} {
+		body := map[string]any{"answers": []map[string]any{
+			{"question_id": name.ID, "value": sub.who},
+			{"question_id": rate.ID, "value": sub.rating},
+		}}
+		if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses", body, nil); code != http.StatusCreated {
+			t.Fatalf("submit %s: %d", sub.who, code)
+		}
+	}
+
+	// List responses -> 2, each with 2 answers.
+	var responses []struct {
+		ID      string `json:"id"`
+		Answers []struct {
+			QuestionID string `json:"question_id"`
+		} `json:"answers"`
+	}
+	if code := h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/responses", nil, &responses); code != http.StatusOK {
+		t.Fatalf("list responses: %d", code)
+	}
+	if len(responses) != 2 {
+		t.Fatalf("want 2 responses, got %d", len(responses))
+	}
+	for _, r := range responses {
+		if len(r.Answers) != 2 {
+			t.Fatalf("want 2 answers per response, got %d", len(r.Answers))
+		}
+	}
+
+	// Analytics: 2 responses, completion 1.0, rating average 4.
+	var analytics struct {
+		ResponseCount  int     `json:"response_count"`
+		CompletionRate float64 `json:"completion_rate"`
+		Questions      []struct {
+			QuestionID string   `json:"question_id"`
+			Type       string   `json:"type"`
+			Answered   int      `json:"answered"`
+			Average    *float64 `json:"average"`
+		} `json:"questions"`
+	}
+	if code := h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/analytics", nil, &analytics); code != http.StatusOK {
+		t.Fatalf("analytics: %d", code)
+	}
+	if analytics.ResponseCount != 2 || analytics.CompletionRate != 1.0 {
+		t.Fatalf("unexpected analytics totals: %+v", analytics)
+	}
+	var ratingAvg *float64
+	for _, q := range analytics.Questions {
+		if q.QuestionID == rate.ID {
+			ratingAvg = q.Average
+		}
+	}
+	if ratingAvg == nil || *ratingAvg != 4.0 {
+		t.Fatalf("rating average = %v, want 4.0", ratingAvg)
+	}
+
+	// CSV export: header + 2 data rows, with the question titles as columns.
+	code, csvBody := h.doAuthRaw(http.MethodGet, "/api/v1/forms/"+form.ID+"/export.csv", nil)
+	if code != http.StatusOK {
+		t.Fatalf("export: %d", code)
+	}
+	lines := strings.Split(strings.TrimSpace(csvBody), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("want 3 CSV lines (header+2), got %d: %q", len(lines), csvBody)
+	}
+	if !strings.Contains(lines[0], "Your name") || !strings.Contains(lines[0], "Rate us") {
+		t.Fatalf("CSV header missing question columns: %q", lines[0])
+	}
+	if !strings.Contains(csvBody, "Alice") || !strings.Contains(csvBody, "Bob") {
+		t.Fatalf("CSV missing answer values: %q", csvBody)
+	}
+}
+
 func (h *harness) mustCreateQuestion(formID string, body map[string]any, out any) {
 	h.t.Helper()
 	if code := h.do(http.MethodPost, "/api/v1/forms/"+formID+"/questions", body, out); code != http.StatusCreated {
 		h.t.Fatalf("create question %v: want 201, got %d", body["type"], code)
 	}
+}
+
+// doAuthRaw issues an authenticated request and returns status + raw body
+// (used for non-JSON responses like CSV export).
+func (h *harness) doAuthRaw(method, path string, body any) (int, string) {
+	h.t.Helper()
+	var reqBody io.Reader
+	if body != nil {
+		b, _ := json.Marshal(body)
+		reqBody = bytes.NewReader(b)
+	}
+	req := httptest.NewRequest(method, path, reqBody)
+	req.Header.Set("Content-Type", "application/json")
+	tok, _ := h.jwt.GenerateSessionToken(h.userID, "creator@test.dev", "Creator")
+	req.AddCookie(&http.Cookie{Name: middleware.SessionCookieName, Value: tok})
+	rec := httptest.NewRecorder()
+	h.engine.ServeHTTP(rec, req)
+	return rec.Code, rec.Body.String()
 }
 
 // doAnon issues an UNauthenticated request (no session cookie) — for the public

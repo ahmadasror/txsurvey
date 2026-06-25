@@ -81,7 +81,8 @@ func (r *FormRepo) GetByIDOwned(ctx context.Context, id, ownerID string) (*model
 func (r *FormRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]model.FormListItem, int, error) {
 	listQ := `
 		SELECT ` + prefixCols("f", formCols) + `,
-		       COUNT(q.id) AS question_count
+		       COUNT(q.id) AS question_count,
+		       (SELECT COUNT(*) FROM responses r WHERE r.form_id = f.id) AS response_count
 		FROM forms f
 		LEFT JOIN questions q ON q.form_id = f.id
 		WHERE f.owner_id = $1 AND f.deleted_at IS NULL
@@ -100,7 +101,7 @@ func (r *FormRepo) ListByOwner(ctx context.Context, ownerID string, limit, offse
 		var settings []byte
 		var publishedAt *time.Time
 		if err := rows.Scan(&it.ID, &it.OwnerID, &it.Title, &it.Description, &it.Slug,
-			&it.Status, &settings, &publishedAt, &it.CreatedAt, &it.UpdatedAt, &it.QuestionCount); err != nil {
+			&it.Status, &settings, &publishedAt, &it.CreatedAt, &it.UpdatedAt, &it.QuestionCount, &it.ResponseCount); err != nil {
 			return nil, 0, fmt.Errorf("scan form list: %w", err)
 		}
 		if len(settings) > 0 {

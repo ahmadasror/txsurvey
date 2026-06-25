@@ -55,12 +55,14 @@ func main() {
 	formSvc := service.NewFormService(formRepo, questionRepo)
 	questionSvc := service.NewQuestionService(formRepo, questionRepo)
 	responseSvc := service.NewResponseService(formRepo, questionRepo, responseRepo)
+	resultsSvc := service.NewResultsService(formRepo, questionRepo, responseRepo)
 
 	h := &router.Handlers{
 		Auth:     handler.NewAuthHandler(authSvc, jwtMgr, cfg),
 		Form:     handler.NewFormHandler(formSvc),
 		Question: handler.NewQuestionHandler(questionSvc),
 		Public:   handler.NewPublicHandler(responseSvc),
+		Results:  handler.NewResultsHandler(resultsSvc),
 	}
 
 	r := router.Setup(cfg, h, jwtMgr)

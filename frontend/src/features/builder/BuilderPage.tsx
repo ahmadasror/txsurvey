@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Copy, Eye, Loader2, Send, Undo2 } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, BarChart3, Check, Copy, Eye, Loader2, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -106,6 +106,11 @@ export function BuilderPage() {
                 {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Share link"}
               </Button>
             )}
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/forms/${id}/results`}>
+                <BarChart3 /> Results
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => window.open(`/r/${form.slug}`, "_blank")}>
               <Eye /> Preview
             </Button>
