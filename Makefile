@@ -20,6 +20,18 @@ lint: ## Vet + gofmt check
 tidy:
 	go mod tidy
 
+# --- Lean SDD (spec-driven) ---
+spec-validate: ## Hard gate: validate every FR contract block against the schema
+	python3 scripts/validate_fr_contracts.py
+
+spec-drift: ## Advisory: FR-declared endpoints/tables exist in code (exit 0)
+	python3 scripts/spec_drift.py
+
+spec-status: ## Show FRs by partition
+	@for p in active done todo; do \
+		echo "[$$p]"; ls docs/fr/survey/$$p/*.md 2>/dev/null | sed 's#.*/#  #' || echo "  (none)"; \
+	done
+
 # --- Migrations ---
 migrate-new: ## Scaffold the next migration pair: make migrate-new name=add_foo
 	@test -n "$(name)" || (echo "usage: make migrate-new name=<snake_case>" && exit 1)
