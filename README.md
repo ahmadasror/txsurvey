@@ -6,7 +6,8 @@ public link, and read responses / analytics / CSV. Respondents answer
 **one question per screen** on any device.
 
 - **Backend:** Go (Gin + pgx/v5 + PostgreSQL + golang-migrate + slog), API-first.
-- **Frontend:** React SPA (Vite + TypeScript + Tailwind + shadcn/ui), TanStack Query.
+- **Frontend:** React SPA (Vite + TypeScript + Tailwind + shadcn/ui), TanStack Query. "Soft Studio" design
+  system — 5 warm themes (Pine/Sand/Grape/Coral/Ink) + per-form display font, applied via CSS variables.
 - **Auth:** Sign in with Google (OAuth2, sign-in only); app-minted JWT session in an httpOnly cookie.
 - **Deploy:** single Go binary with the SPA embedded (one artifact, first-party cookie).
 

@@ -68,6 +68,21 @@ and **public** (anonymous, rate-limited). Every form-scoped repo query carries
   SPA (`internal/web/embed_dev.go`), so backend dev never needs a frontend build. Production uses
   `-tags embedspa` (`embed_prod.go` + `internal/web/dist/`, staged by `make build`/Dockerfile).
 
+- **Theming is a hex→HSL pipeline ("Soft Studio" design system), not hardcoded CSS.**
+  `frontend/src/lib/themes.ts` defines the 5 presets (Pine/Sand/Grape/Coral/Ink, **default Pine**) as hex
+  token sets, converts them to the `H S% L%` triples shadcn expects via `lib/theme.ts hexToHslTriple`, and
+  applies them as CSS variables on a themed container through `themeStyle(theme, font)`. Per-form display
+  font (`editorial|modern|soft|serif`) is a `settings.font` field that drives `--font-display`; the UI/body
+  font (Hanken Grotesk) is fixed. Unknown/legacy preset ids fall back to Pine. To change a palette, edit only
+  the hex in `themes.ts` — but the `:root` defaults in `index.css` must keep mirroring the Pine triples, and
+  fonts load via Google Fonts in `index.html`. Runner/Builder/Results wrap their root in `themeStyle(...)`;
+  Dashboard/Login/Legal use the `:root` default. `settings.font` is a plain JSONB field — no migration.
+
+- **SPA routes (`router.tsx`):** public `/login`, `/legal`, `/r/:slug` (runner) sit outside the auth guard;
+  `/`, `/templates` are under `DashboardLayout`; `/forms/:id` and `/forms/:id/results` are full-bleed.
+  `TemplatesPage` seeds a draft form (create → PATCH settings → POST each question) then opens the Builder —
+  it relies on the backend auto-filling empty option ids (`question_service.go`).
+
 - **Session auth is a cookie, not a Bearer header** — the one deliberate deviation from the sibling services.
   txsurvey mints its OWN JWT after Google sign-in (`pkg/auth`) and stores it in the httpOnly `session` cookie;
   `middleware.SessionAuth` reads the cookie. `userID(c)` (key `"user_id"`) is the single read point.
@@ -80,6 +95,25 @@ and **public** (anonymous, rate-limited). Every form-scoped repo query carries
 
 - **Port 8080 may be occupied** by an environment proxy; tests use `httptest` (no port). When running the
   server locally to poke it, set `SERVER_PORT` to a free port.
+
+## Deployment (this checkout doubles as the production host)
+
+There is **no CD** — pushing to `main` and a green CI run do **not** deploy. The live service runs on this
+same VPS as the `txsurvey-app-1` Docker container (image `txsurvey-app:prod`, built from this repo with the
+SPA embedded), published on the docker bridge at `172.17.0.1:8092` behind the external `static-web` nginx +
+Cloudflare tunnel. It serves **https://brainzap.net/txsurvey** and **https://ct.tuxceria.biz.id/txsurvey**
+(path-prefix `/txsurvey/`, baked in via `frontend/.env.production` `VITE_BASE`).
+
+Redeploy after changes land on `main`:
+
+```bash
+docker compose -f docker-compose.prod.yml -p txsurvey up -d --build
+```
+
+This rebuilds the embedded-SPA image and recreates the app container (brief downtime). Postgres
+(`txsurvey-postgres-1`, not redefined in the prod compose) and uploaded assets (`./data/uploads`, a host
+volume) persist. Migrations run idempotently at boot. Secrets come from `deploy/production.env` (gitignored —
+never commit it). Google OAuth redirect URIs / test users are Console-only and cannot be changed from code.
 
 ## Adding a question type or operator
 
