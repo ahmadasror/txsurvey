@@ -10,17 +10,19 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ahmadasror/txsurvey/internal/config"
+	"github.com/ahmadasror/txsurvey/internal/handler"
 	"github.com/ahmadasror/txsurvey/internal/middleware"
+	"github.com/ahmadasror/txsurvey/pkg/auth"
 )
 
-// Handlers holds every HTTP handler. Fields are populated in main as phases add
-// them; registerRoutes only mounts the ones that are non-nil.
+// Handlers holds every HTTP handler, wired in main as phases add them.
 type Handlers struct {
-	Auth *struct{} // placeholder until Phase 1 wires the real handlers
+	Auth *handler.AuthHandler
 }
 
-// Setup builds the configured Gin engine.
-func Setup(cfg *config.Config, h *Handlers) *gin.Engine {
+// Setup builds the configured Gin engine. jwtMgr backs the SessionAuth
+// middleware that gates creator-only routes.
+func Setup(cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) *gin.Engine {
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -41,6 +43,6 @@ func Setup(cfg *config.Config, h *Handlers) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	registerRoutes(r, cfg, h)
+	registerRoutes(r, cfg, h, jwtMgr)
 	return r
 }

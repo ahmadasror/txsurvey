@@ -1,0 +1,86 @@
+package handler
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/ahmadasror/txsurvey/internal/config"
+	"github.com/ahmadasror/txsurvey/internal/middleware"
+	"github.com/ahmadasror/txsurvey/internal/service"
+	"github.com/ahmadasror/txsurvey/pkg/auth"
+	"github.com/ahmadasror/txsurvey/pkg/response"
+)
+
+// AuthHandler runs the Google sign-in endpoints and session lifecycle.
+type AuthHandler struct {
+	svc *service.AuthService
+	jwt *auth.JWTManager
+	cfg *config.Config
+}
+
+func NewAuthHandler(svc *service.AuthService, jwt *auth.JWTManager, cfg *config.Config) *AuthHandler {
+	return &AuthHandler{svc: svc, jwt: jwt, cfg: cfg}
+}
+
+// GoogleLogin redirects the browser to Google's consent screen.
+func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	if !h.cfg.GoogleConfigured() {
+		response.Error(c, http.StatusServiceUnavailable, "GOOGLE_NOT_CONFIGURED", "Google sign-in is not configured")
+		return
+	}
+	c.Redirect(http.StatusFound, h.svc.AuthURL())
+}
+
+// GoogleCallback completes the OAuth handshake, mints a session cookie, and
+// redirects back to the SPA.
+func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+	if !h.cfg.GoogleConfigured() {
+		response.Error(c, http.StatusServiceUnavailable, "GOOGLE_NOT_CONFIGURED", "Google sign-in is not configured")
+		return
+	}
+	user, err := h.svc.HandleCallback(c.Request.Context(), c.Query("state"), c.Query("code"))
+	if err != nil {
+		handleServiceError(c, err, "google callback")
+		return
+	}
+	token, err := h.jwt.GenerateSessionToken(user.ID, user.Email, user.Name)
+	if err != nil {
+		handleServiceError(c, err, "mint session")
+		return
+	}
+	h.setSessionCookie(c, token, int(h.jwt.TTL().Seconds()))
+	c.Redirect(http.StatusFound, h.cfg.AppBaseURL)
+}
+
+// Logout clears the session cookie.
+func (h *AuthHandler) Logout(c *gin.Context) {
+	h.setSessionCookie(c, "", -1)
+	response.OK(c, nil, "logged out")
+}
+
+// Me returns the currently signed-in creator.
+func (h *AuthHandler) Me(c *gin.Context) {
+	user, err := h.svc.CurrentUser(c.Request.Context(), userID(c))
+	if err != nil {
+		handleServiceError(c, err, "current user")
+		return
+	}
+	if user == nil {
+		response.Error(c, http.StatusNotFound, "NOT_FOUND", "user not found")
+		return
+	}
+	response.OK(c, user, "ok")
+}
+
+func (h *AuthHandler) setSessionCookie(c *gin.Context, value string, maxAge int) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     middleware.SessionCookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		Secure:   h.cfg.CookieSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}

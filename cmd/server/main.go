@@ -13,8 +13,12 @@ import (
 
 	"github.com/ahmadasror/txsurvey/internal/config"
 	"github.com/ahmadasror/txsurvey/internal/database"
+	"github.com/ahmadasror/txsurvey/internal/handler"
 	"github.com/ahmadasror/txsurvey/internal/logging"
+	"github.com/ahmadasror/txsurvey/internal/repository"
 	"github.com/ahmadasror/txsurvey/internal/router"
+	"github.com/ahmadasror/txsurvey/internal/service"
+	"github.com/ahmadasror/txsurvey/pkg/auth"
 )
 
 func main() {
@@ -39,10 +43,17 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Dependency wiring grows per phase (repos -> services -> handlers).
-	h := &router.Handlers{}
+	// Dependency wiring (repos -> services -> handlers).
+	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.SessionTTL)
 
-	r := router.Setup(cfg, h)
+	userRepo := repository.NewUserRepo(pool)
+	authSvc := service.NewAuthService(cfg, userRepo)
+
+	h := &router.Handlers{
+		Auth: handler.NewAuthHandler(authSvc, jwtMgr, cfg),
+	}
+
+	r := router.Setup(cfg, h, jwtMgr)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.ServerPort,
