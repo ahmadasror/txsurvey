@@ -17,7 +17,9 @@ import (
 
 // Handlers holds every HTTP handler, wired in main as phases add them.
 type Handlers struct {
-	Auth *handler.AuthHandler
+	Auth     *handler.AuthHandler
+	Form     *handler.FormHandler
+	Question *handler.QuestionHandler
 }
 
 // Setup builds the configured Gin engine. jwtMgr backs the SessionAuth

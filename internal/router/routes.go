@@ -27,5 +27,20 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	authed.POST("/auth/logout", h.Auth.Logout)
 	authed.GET("/auth/me", h.Auth.Me)
 
+	// Forms.
+	authed.GET("/forms", h.Form.List)
+	authed.POST("/forms", h.Form.Create)
+	authed.GET("/forms/:id", h.Form.Get)
+	authed.PATCH("/forms/:id", h.Form.Update)
+	authed.DELETE("/forms/:id", h.Form.Delete)
+	authed.POST("/forms/:id/publish", h.Form.Publish)
+	authed.POST("/forms/:id/unpublish", h.Form.Unpublish)
+
+	// Questions (nested under a form).
+	authed.POST("/forms/:id/questions", h.Question.Create)
+	authed.PUT("/forms/:id/questions/reorder", h.Question.Reorder)
+	authed.PATCH("/forms/:id/questions/:qid", h.Question.Update)
+	authed.DELETE("/forms/:id/questions/:qid", h.Question.Delete)
+
 	_ = cfg
 }

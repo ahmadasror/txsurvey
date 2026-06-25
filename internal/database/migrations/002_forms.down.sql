@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS forms;
+DROP TYPE IF EXISTS form_status;

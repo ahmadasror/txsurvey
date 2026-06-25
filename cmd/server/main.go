@@ -47,10 +47,17 @@ func main() {
 	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.SessionTTL)
 
 	userRepo := repository.NewUserRepo(pool)
+	formRepo := repository.NewFormRepo(pool)
+	questionRepo := repository.NewQuestionRepo(pool)
+
 	authSvc := service.NewAuthService(cfg, userRepo)
+	formSvc := service.NewFormService(formRepo, questionRepo)
+	questionSvc := service.NewQuestionService(formRepo, questionRepo)
 
 	h := &router.Handlers{
-		Auth: handler.NewAuthHandler(authSvc, jwtMgr, cfg),
+		Auth:     handler.NewAuthHandler(authSvc, jwtMgr, cfg),
+		Form:     handler.NewFormHandler(formSvc),
+		Question: handler.NewQuestionHandler(questionSvc),
 	}
 
 	r := router.Setup(cfg, h, jwtMgr)
