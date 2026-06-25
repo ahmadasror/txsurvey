@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { FileText, Loader2, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,16 +15,34 @@ import {
 } from "@/components/ui/dialog";
 import { ThemePicker } from "@/components/ThemePicker";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { cn } from "@/lib/utils";
 import { api } from "@/api/client";
 import { DEFAULT_THEME_ID } from "@/lib/themes";
 import { useCreateForm, useDeleteForm, useForms } from "@/api/forms";
 import type { FormListItem, FormStatus } from "@/types/forms";
 
-const statusVariant: Record<FormStatus, "success" | "muted" | "secondary"> = {
-  published: "success",
-  draft: "muted",
-  closed: "secondary",
+const statusLabel: Record<FormStatus, string> = {
+  published: "● Published",
+  draft: "Draft",
+  closed: "Closed",
 };
+
+const statusClass: Record<FormStatus, string> = {
+  published: "bg-primary-soft text-primary",
+  draft: "bg-muted text-muted-foreground",
+  closed: "bg-brand/15 text-brand",
+};
+
+/** sevenBars derives a stable 7-value visual motif from the form id. It is
+ *  ambient decoration (no axis, no label) — never presented as a real metric. */
+function sevenBars(seed: string): number[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return Array.from({ length: 7 }, (_, i) => {
+    h = (h * 1103515245 + 12345) >>> 0;
+    return 0.35 + ((h >> (i % 8)) % 65) / 100;
+  });
+}
 
 export function FormsListPage() {
   const navigate = useNavigate();
@@ -49,7 +66,7 @@ export function FormsListPage() {
     if (creating) return;
     setCreating(true);
     try {
-      const form = await createForm.mutateAsync(title.trim() || "Untitled survey");
+      const form = await createForm.mutateAsync(title.trim() || "Survei tanpa judul");
       await api(`/forms/${form.id}`, {
         method: "PATCH",
         body: JSON.stringify({
@@ -64,12 +81,19 @@ export function FormsListPage() {
     }
   };
 
+  const totalResponses = (forms ?? []).reduce((n, f) => n + f.response_count, 0);
+
   return (
-    <main className="container max-w-5xl py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Your surveys</h1>
-        <Button onClick={openCreate}>
-          <Plus /> New survey
+    <main className="mx-auto max-w-[980px] px-6 py-9">
+      <div className="mb-7 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[28px] leading-tight text-foreground">Surveimu</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {(forms ?? []).length} survei · {totalResponses} respons total
+          </p>
+        </div>
+        <Button className="h-11 rounded-xl" onClick={openCreate}>
+          <Plus /> Survei baru
         </Button>
       </div>
 
@@ -78,63 +102,85 @@ export function FormsListPage() {
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : !forms || forms.length === 0 ? (
-        <Card>
+        <Card className="rounded-2xl border-dashed bg-card/50">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <FileText className="size-10 text-muted-foreground" />
-            <p className="text-muted-foreground">No surveys yet. Create your first one.</p>
-            <Button onClick={openCreate}>
-              <Plus /> New survey
+            <p className="text-muted-foreground">Belum ada survei. Buat yang pertama.</p>
+            <Button className="rounded-xl" onClick={openCreate}>
+              <Plus /> Survei baru
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {forms.map((f) => (
-            <Card
-              key={f.id}
-              className="cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => navigate(`/forms/${f.id}`)}
-            >
-              <CardHeader className="flex-row items-start justify-between space-y-0">
-                <div className="min-w-0">
-                  <CardTitle className="truncate text-lg">{f.title}</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {f.question_count} question{f.question_count === 1 ? "" : "s"} · {f.response_count} response
-                    {f.response_count === 1 ? "" : "s"}
-                  </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {forms.map((f) => {
+            const isDraft = f.status === "draft";
+            return (
+              <div
+                key={f.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/forms/${f.id}`)}
+                onKeyDown={(e) => e.key === "Enter" && navigate(`/forms/${f.id}`)}
+                className={cn(
+                  "group cursor-pointer rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(29,38,36,0.10)]",
+                  isDraft ? "border-dashed bg-background" : "border-border bg-card",
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="min-w-0 truncate text-[17px] font-bold text-foreground">{f.title}</h2>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      statusClass[f.status],
+                    )}
+                  >
+                    {statusLabel[f.status]}
+                  </span>
                 </div>
-                <Badge variant={statusVariant[f.status]}>{f.status}</Badge>
-              </CardHeader>
-              <CardContent className="flex justify-end pt-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteTarget(f);
-                  }}
-                  aria-label="Delete survey"
-                >
-                  <Trash2 className="text-destructive" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {f.question_count} pertanyaan · {f.response_count} respons
+                </p>
+
+                <div className="mt-4 flex h-9 items-end gap-1" aria-hidden>
+                  {sevenBars(f.id).map((h, i) => (
+                    <span
+                      key={i}
+                      className="flex-1 rounded-sm bg-primary"
+                      style={{ height: `${Math.round(h * 100)}%`, opacity: 0.18 + h * 0.5 }}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteTarget(f);
+                    }}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-destructive"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New survey</DialogTitle>
-            <DialogDescription>Give it a title and pick a theme — you can change both later.</DialogDescription>
+            <DialogTitle className="font-display text-2xl">Survei baru</DialogTitle>
+            <DialogDescription>Beri judul dan pilih tema — keduanya bisa diubah nanti.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>Title</Label>
+            <Label>Judul</Label>
             <Input
               autoFocus
               value={title}
-              placeholder="e.g. Customer feedback"
+              placeholder="mis. Feedback pelanggan"
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") submit();
@@ -142,12 +188,12 @@ export function FormsListPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Theme</Label>
+            <Label>Tema</Label>
             <ThemePicker value={preset} onChange={setPreset} />
           </div>
           <DialogFooter>
-            <Button onClick={submit} disabled={creating}>
-              {creating ? <Loader2 className="animate-spin" /> : <Sparkles />} Create survey
+            <Button className="rounded-xl" onClick={submit} disabled={creating}>
+              {creating ? <Loader2 className="animate-spin" /> : <Sparkles />} Buat survei
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -156,13 +202,13 @@ export function FormsListPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Delete this survey?"
+        title="Hapus survei ini?"
         description={
           deleteTarget
-            ? `"${deleteTarget.title}" and its ${deleteTarget.response_count} response${deleteTarget.response_count === 1 ? "" : "s"} will be permanently deleted.`
+            ? `"${deleteTarget.title}" dan ${deleteTarget.response_count} responsnya akan dihapus permanen.`
             : undefined
         }
-        confirmText="Delete"
+        confirmText="Hapus"
         destructive
         onConfirm={() => {
           if (deleteTarget) deleteForm.mutate(deleteTarget.id);

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, CornerDownLeft, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/BrandMark";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
@@ -12,6 +13,9 @@ import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngin
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
 type Answers = Record<string, AnswerValue | undefined>;
+
+// Question-enter transition (Soft Studio): fade + 22px rise, ~290ms ease-out.
+const ENTER = { duration: 0.29, ease: [0.2, 0.7, 0.3, 1] as const };
 
 const isEmpty = (v: AnswerValue | undefined): boolean =>
   v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
@@ -66,7 +70,7 @@ export function RunnerPage() {
   const next = useCallback(() => {
     if (!current) return;
     if (current.type !== "statement" && current.required && isEmpty(answers[current.id])) {
-      setError("This question is required.");
+      setError("Pertanyaan ini wajib diisi.");
       return;
     }
     setError(null);
@@ -97,7 +101,7 @@ export function RunnerPage() {
           const opt = current.metadata.options?.[i];
           if (opt) {
             setAnswer(current.id, opt.id);
-            setTimeout(next, 120);
+            setTimeout(next, 170);
           }
         } else if (current.type === "checkboxes") {
           const opt = current.metadata.options?.[i];
@@ -108,11 +112,11 @@ export function RunnerPage() {
         } else if (current.type === "rating") {
           if (i + 1 <= (current.metadata.scale ?? 5)) {
             setAnswer(current.id, i + 1);
-            setTimeout(next, 120);
+            setTimeout(next, 170);
           }
         } else if (current.type === "yes_no" && i < 2) {
           setAnswer(current.id, i === 0);
-          setTimeout(next, 120);
+          setTimeout(next, 170);
         }
       }
     };
@@ -120,14 +124,14 @@ export function RunnerPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [started, done, current, next, answers]);
 
-  const rootStyle = themeStyle(form?.settings.theme);
+  const rootStyle = themeStyle(form?.settings.theme, form?.settings.font);
 
   if (isLoading) return <FullScreenLoader />;
   if (isError || !form)
     return (
       <Centered>
-        <p className="text-lg font-medium">This form isn’t available.</p>
-        <p className="text-muted-foreground">It may be unpublished or the link is wrong.</p>
+        <p className="font-display text-2xl text-foreground">Survei ini tidak tersedia.</p>
+        <p className="text-body">Mungkin belum dipublikasikan atau tautannya keliru.</p>
       </Centered>
     );
 
@@ -137,62 +141,66 @@ export function RunnerPage() {
   const isLast = current ? nextQuestionId(questions, rules, answers, current.id) === null : false;
 
   return (
-    <div style={rootStyle} className="flex min-h-dvh flex-col bg-background">
+    <div style={rootStyle} className="font-sans relative flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
       {showProgress && (
-        <div className="h-1.5 w-full bg-muted">
+        <div className="h-1 w-full bg-primary-soft">
           <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      <div className="flex flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-xl">
+      <div className="flex flex-1 items-center justify-center px-6 py-10">
+        <div className="w-full max-w-[600px]">
           {!started ? (
             <Welcome
               title={form.settings.welcome_title || form.title}
               description={form.settings.welcome_description || form.description}
               banner={assetUrl(form.settings.banner_url)}
               logo={assetUrl(form.settings.logo_url)}
-              startLabel={form.settings.start_button_text?.trim() || "Start"}
+              startLabel={form.settings.start_button_text?.trim() || "Mulai"}
+              questionCount={questions.length}
               onStart={start}
               empty={questions.length === 0}
             />
           ) : done ? (
             <ThankYou
-              title={form.settings.thank_you_title || "Thank you!"}
-              description={form.settings.thank_you_description || "Your response has been recorded."}
+              title={form.settings.thank_you_title || "Makasih, sudah terkirim!"}
+              description={form.settings.thank_you_description || "Jawabanmu sudah kami catat."}
               logo={assetUrl(form.settings.logo_url)}
             />
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentId}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
+                exit={{ opacity: 0, y: -18 }}
+                transition={ENTER}
               >
                 {current && (
                   <QuestionScreen
                     question={current}
                     value={answers[current.id]}
                     onChange={(v) => setAnswer(current.id, v)}
-                    onAdvance={() => setTimeout(next, 120)}
+                    onAdvance={() => setTimeout(next, 170)}
+                    step={Math.min(history.length, path.length || history.length)}
+                    total={Math.max(path.length, history.length)}
                   />
                 )}
 
-                {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-                {submit.isError && <p className="mt-3 text-sm text-destructive">{(submit.error as Error).message}</p>}
+                {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+                {submit.isError && <p className="mt-4 text-sm text-destructive">{(submit.error as Error).message}</p>}
 
-                <div className="mt-8 flex items-center gap-3">
-                  <Button onClick={next} size="lg" disabled={submit.isPending}>
-                    {submit.isPending ? <Loader2 className="animate-spin" /> : isLast ? <Send /> : <ArrowRight />}
-                    {isLast ? "Submit" : "OK"}
+                <div className="mt-9 flex items-center gap-4">
+                  <Button onClick={next} size="lg" className="h-12 rounded-xl px-6 text-base" disabled={submit.isPending}>
+                    {submit.isPending ? <Loader2 className="animate-spin" /> : isLast ? <Send /> : null}
+                    {isLast ? "Kirim" : "OK"}
+                    {!isLast && !submit.isPending && <ArrowRight />}
                   </Button>
                   <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
-                    press Enter <CornerDownLeft className="size-3" />
+                    tekan Enter <CornerDownLeft className="size-3" />
                   </span>
-                  <Button variant="ghost" size="sm" className="ml-auto" onClick={back}>
-                    <ArrowLeft /> Back
+                  <Button variant="ghost" size="sm" className="ml-auto text-muted-foreground" onClick={back}>
+                    <ArrowLeft /> Kembali
                   </Button>
                 </div>
               </motion.div>
@@ -210,6 +218,7 @@ function Welcome({
   banner,
   logo,
   startLabel,
+  questionCount,
   onStart,
   empty,
 }: {
@@ -218,23 +227,35 @@ function Welcome({
   banner?: string;
   logo?: string;
   startLabel: string;
+  questionCount: number;
   onStart: () => void;
   empty: boolean;
 }) {
+  const mins = Math.max(1, Math.round(questionCount * 0.4));
   return (
     <div className="text-center">
       {banner && (
-        <img src={banner} alt="" className="mb-6 max-h-52 w-full rounded-2xl border object-cover shadow-sm" />
+        <img src={banner} alt="" className="soft-card-shadow mb-7 max-h-56 w-full rounded-2xl border object-cover" />
       )}
-      {logo && <img src={logo} alt="" className="mx-auto mb-4 size-16 rounded-2xl border object-cover" />}
-      <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
-      {description && <p className="mt-3 text-lg text-muted-foreground">{description}</p>}
-      {empty ? (
-        <p className="mt-8 text-muted-foreground">This form has no questions yet.</p>
+      {logo ? (
+        <img src={logo} alt="" className="mx-auto mb-5 size-16 rounded-2xl border object-cover" />
       ) : (
-        <Button size="lg" className="mt-8" onClick={onStart}>
-          {startLabel} <ArrowRight />
-        </Button>
+        <BrandMark size={56} className="mx-auto mb-5" />
+      )}
+      <div className="label-eyebrow text-brand">Survei</div>
+      <h1 className="font-display mt-3 text-[34px] leading-[1.1] text-foreground sm:text-[42px]">{title}</h1>
+      {description && <p className="text-body mx-auto mt-4 max-w-md text-lg">{description}</p>}
+      {empty ? (
+        <p className="text-body mt-8">Survei ini belum punya pertanyaan.</p>
+      ) : (
+        <>
+          <Button size="lg" className="mt-8 h-12 rounded-xl px-7 text-base" onClick={onStart}>
+            {startLabel} <ArrowRight />
+          </Button>
+          <p className="mt-5 text-[13px] text-muted-foreground">
+            {questionCount} pertanyaan · ±{mins} menit · anonim
+          </p>
+        </>
       )}
     </div>
   );
@@ -242,20 +263,29 @@ function Welcome({
 
 function ThankYou({ title, description, logo }: { title: string; description?: string; logo?: string }) {
   return (
-    <div className="text-center">
+    <div className="relative text-center">
+      <span className="animate-floaty pointer-events-none absolute -left-2 top-4 size-10 rounded-2xl bg-brand/20" />
+      <span
+        className="animate-floaty pointer-events-none absolute -right-1 top-20 size-7 rounded-full bg-primary/15"
+        style={{ animationDelay: "1.2s" }}
+      />
       {logo ? (
-        <img src={logo} alt="" className="mx-auto mb-5 size-16 rounded-2xl border object-cover" />
+        <img src={logo} alt="" className="mx-auto mb-6 size-16 rounded-2xl border object-cover" />
       ) : (
-        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10">
-          <Check className="size-7 text-primary" />
+        <div className="mx-auto mb-6 grid size-16 place-items-center rounded-full bg-primary">
+          <Check className="size-8 text-primary-foreground" strokeWidth={2.5} />
         </div>
       )}
-      <h1 className="text-3xl font-bold">{title}</h1>
-      {description && <p className="mt-3 text-lg text-muted-foreground">{description}</p>}
+      <h1 className="font-display text-[32px] leading-tight text-foreground sm:text-[38px]">{title}</h1>
+      {description && <p className="text-body mt-3 text-lg">{description}</p>}
     </div>
   );
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-dvh flex-col items-center justify-center gap-1 p-6 text-center">{children}</div>;
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background p-6 text-center">
+      {children}
+    </div>
+  );
 }

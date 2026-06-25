@@ -10,15 +10,23 @@ export default {
   theme: {
     container: { center: true, padding: "1rem", screens: { "2xl": "1400px" } },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-ui)"],
+        display: ["var(--font-display)"],
+        serif: ["var(--font-display)"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        body: "hsl(var(--body))",
+        brand: "hsl(var(--brand-accent))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          soft: "hsl(var(--primary-soft))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",

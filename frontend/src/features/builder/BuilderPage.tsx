@@ -12,6 +12,7 @@ import { QuestionEditor } from "@/features/builder/QuestionEditor";
 import { DesignDialog } from "@/features/builder/DesignDialog";
 import { cn } from "@/lib/utils";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
+import { themeStyle } from "@/lib/themes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
 import {
   useAddQuestion,
@@ -96,9 +97,9 @@ export function BuilderPage() {
   const isPublished = form.status === "published";
 
   return (
-    <div>
+    <div style={themeStyle(form.settings.theme, form.settings.font)} className="font-sans min-h-dvh bg-background">
       {/* Builder header */}
-      <div className="border-b bg-background">
+      <div className="border-b bg-card">
         <div className="container flex flex-wrap items-center gap-3 py-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Back">
             <ArrowLeft />
@@ -107,7 +108,7 @@ export function BuilderPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={saveTitle}
-            className="h-9 max-w-xs border-transparent text-base font-semibold hover:border-input focus-visible:border-input"
+            className="font-display h-9 max-w-xs border-transparent text-lg font-medium hover:border-input focus-visible:border-input"
           />
           <Badge variant={isPublished ? "success" : "muted"}>{form.status}</Badge>
 
@@ -163,13 +164,13 @@ export function BuilderPage() {
       </div>
 
       {/* Builder body */}
-      <main className="container grid gap-6 py-6 md:grid-cols-[20rem_1fr]">
+      <main className="container grid gap-[22px] py-6 md:grid-cols-[17.5rem_1fr]">
         <aside className={cn("space-y-3", mobilePane === "editor" && "hidden md:block")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between" disabled={addQuestion.isPending}>
+              <Button variant="outline" className="w-full justify-between rounded-xl bg-card" disabled={addQuestion.isPending}>
                 <span className="flex items-center gap-2">
-                  <Plus /> Add question
+                  <Plus /> Tambah pertanyaan
                 </span>
                 <ChevronDown className="size-4 opacity-50" />
               </Button>
@@ -184,8 +185,8 @@ export function BuilderPage() {
           </DropdownMenu>
 
           {questions.length === 0 ? (
-            <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Add your first question.
+            <p className="rounded-xl border border-dashed bg-card/50 p-4 text-center text-sm text-muted-foreground">
+              Tambahkan pertanyaan pertamamu.
             </p>
           ) : (
             <SortableQuestionList
@@ -199,7 +200,7 @@ export function BuilderPage() {
 
         <section className={cn(mobilePane === "list" && "hidden md:block")}>
           {selected ? (
-            <Card className="p-6">
+            <Card className="rounded-2xl p-6 sm:p-[26px]">
               <QuestionEditor
                 formId={id}
                 question={selected}
@@ -212,8 +213,8 @@ export function BuilderPage() {
               />
             </Card>
           ) : (
-            <Card className="flex items-center justify-center p-16 text-center text-sm text-muted-foreground">
-              Select or add a question to edit it.
+            <Card className="flex items-center justify-center rounded-2xl p-16 text-center text-sm text-muted-foreground">
+              Pilih atau tambah pertanyaan untuk mengeditnya.
             </Card>
           )}
         </section>

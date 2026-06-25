@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; background:#e7efe9; color:#235a4c; padding:1px 7px; border-radius:6px; white-space:nowrap; }
+  @media print { .sheet { box-shadow:none !important; } }
+</style>
+</helmet>
+
+<div style="min-height:100dvh; background:#F4F1EA; font-family:'Hanken Grotesk',sans-serif; color:#1d2624; padding:40px 20px;">
+  <div class="sheet" style="max-width:840px; margin:0 auto; background:#ffffff; border:1px solid #e3ddd0; border-radius:20px; box-shadow:0 14px 40px rgba(29,38,36,.1); overflow:hidden;">
+
+    <!-- cover -->
+    <div style="background:#2f6f5e; color:#fff; padding:48px 52px;">
+      <div style="display:flex; align-items:center; gap:11px; margin-bottom:30px;">
+        <div style="width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center;"><span style="width:13px; height:13px; border-radius:5px; border:3px solid #fff; border-top-color:#d98e5a; transform:rotate(45deg);"></span></div>
+        <span style="font-weight:800; font-size:17px;">txsurvey</span>
+        <span style="margin-left:auto; font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#d98e5a;">UX &amp; Design Handoff</span>
+      </div>
+      <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:40px; line-height:1.1; margin:0; max-width:18ch;">Panduan UX &amp; Desain — arah “Soft Studio”.</h1>
+      <p style="font-size:16px; line-height:1.6; color:rgba(255,255,255,.85); margin:18px 0 0; max-width:60ch;">Pedoman untuk membawa redesign ke kode (Vite + React + Tailwind + shadcn/ui). Fokus pada keputusan UX per layar dan pemetaannya ke berkas repo — bukan spesifikasi piksel mati.</p>
+      <div style="margin-top:26px; display:flex; gap:26px; font-size:13px; color:rgba(255,255,255,.78);">
+        <span>Versi 1.0</span><span>26 Juni 2026</span><span>Tema default · Pine</span>
+      </div>
+    </div>
+
+    <div style="padding:44px 52px 56px;">
+
+      <!-- TOC -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 32px; padding:20px 24px; background:#faf8f3; border:1px solid #ece6da; border-radius:14px; margin-bottom:40px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6b736e; grid-column:1 / -1; margin-bottom:4px;">Isi</div>
+        <span style="font-size:14px; color:#46504c;">01 · Prinsip UX</span>
+        <span style="font-size:14px; color:#46504c;">02 · Sistem desain</span>
+        <span style="font-size:14px; color:#46504c;">03 · Panduan per layar</span>
+        <span style="font-size:14px; color:#46504c;">04 · Pemetaan ke kode repo</span>
+        <span style="font-size:14px; color:#46504c;">05 · Aksesibilitas &amp; microcopy</span>
+        <span style="font-size:14px; color:#46504c;">06 · Checklist handoff</span>
+      </div>
+
+      <!-- 01 PRINSIP -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">01</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Prinsip UX</h2></div>
+      <p style="font-size:15px; line-height:1.7; color:#46504c; margin:0 0 18px; padding-left:27px;">Lima prinsip yang menjaga konsistensi setiap keputusan desain. Saat ragu, kembali ke sini.</p>
+      <div style="padding-left:27px; display:flex; flex-direction:column; gap:14px; margin-bottom:44px;">
+        <div style="border-left:2px solid #cfe1d8; padding-left:18px;"><p style="font-weight:700; font-size:15px; margin:0; color:#1d2624;">Satu pertanyaan per layar</p><p style="font-size:14px; line-height:1.6; color:#46504c; margin:4px 0 0;">Runner menampilkan satu pertanyaan sekaligus dengan transisi halus. Mengurangi beban kognitif dan menaikkan tingkat penyelesaian. Jangan menumpuk banyak field dalam satu layar.</p></div>
+        <div style="border-left:2px solid #cfe1d8; padding-left:18px;"><p style="font-weight:700; font-size:15px; margin:0; color:#1d2624;">Tenang &amp; ramah</p><p style="font-size:14px; line-height:1.6; color:#46504c; margin:4px 0 0;">Kertas hangat, satu warna utama yang percaya diri, ruang lega, tipografi serif untuk judul. Hindari gradient ramai, emoji acak, dan kepadatan berlebih.</p></div>
+        <div style="border-left:2px solid #cfe1d8; padding-left:18px;"><p style="font-weight:700; font-size:15px; margin:0; color:#1d2624;">Percakapan, bukan formulir</p><p style="font-size:14px; line-height:1.6; color:#46504c; margin:4px 0 0;">Microcopy santai dan personal (“Apa kabar pengalaman kerjamu?”). Tombol bicara aksi (“Mulai”, “OK”, “Kirim”). Dukungan keyboard: Enter lanjut, angka memilih opsi.</p></div>
+        <div style="border-left:2px solid #cfe1d8; padding-left:18px;"><p style="font-weight:700; font-size:15px; margin:0; color:#1d2624;">Anonimitas &amp; kepercayaan</p><p style="font-size:14px; line-height:1.6; color:#46504c; margin:4px 0 0;">Nyatakan secara eksplisit saat respons anonim. Di Legal, kontak lewat formulir tanpa meminta email. Minta data seminimal mungkin.</p></div>
+        <div style="border-left:2px solid #cfe1d8; padding-left:18px;"><p style="font-weight:700; font-size:15px; margin:0; color:#1d2624;">Progressive disclosure</p><p style="font-size:14px; line-height:1.6; color:#46504c; margin:4px 0 0;">Logika bercabang menampilkan hanya pertanyaan yang relevan. Builder menyembunyikan kompleksitas di balik panel (Design, Logic) sampai dibutuhkan.</p></div>
+      </div>
+
+      <!-- 02 SISTEM DESAIN -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">02</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Sistem desain</h2></div>
+      <div style="padding-left:27px; margin-bottom:44px;">
+        <h3 style="font-size:16px; font-weight:700; color:#1d2624; margin:14px 0 10px;">Tema warna — satu sistem, lima warna</h3>
+        <p style="font-size:14px; line-height:1.6; color:#46504c; margin:0 0 14px;">Ganti preset acak lama (Corporate/Fun/Comical/Girl/Boy) dengan lima tema bernama warna yang berbagi struktur: kertas hangat + satu warna utama + tinta gelap + satu aksen.</p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #ece6da; border-radius:11px;"><span style="width:22px; height:22px; border-radius:6px; background:#2f6f5e;"></span><span style="font-weight:600; font-size:14px; width:64px;">Pine</span><span class="mono">#2f6f5e</span><span style="font-size:13px; color:#6b736e;">default · warisan teal pada kertas krem</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #ece6da; border-radius:11px;"><span style="width:22px; height:22px; border-radius:6px; background:#C2772E;"></span><span style="font-weight:600; font-size:14px; width:64px;">Sand</span><span class="mono">#C2772E</span><span style="font-size:13px; color:#6b736e;">hangat &amp; netral</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #ece6da; border-radius:11px;"><span style="width:22px; height:22px; border-radius:6px; background:#6C4CE0;"></span><span style="font-weight:600; font-size:14px; width:64px;">Grape</span><span class="mono">#6C4CE0</span><span style="font-size:13px; color:#6b736e;">playful &amp; berani</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #ece6da; border-radius:11px;"><span style="width:22px; height:22px; border-radius:6px; background:#E5533D;"></span><span style="font-weight:600; font-size:14px; width:64px;">Coral</span><span class="mono">#E5533D</span><span style="font-size:13px; color:#6b736e;">ramah &amp; hangat</span></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #ece6da; border-radius:11px;"><span style="width:22px; height:22px; border-radius:6px; background:#1F2430;"></span><span style="font-weight:600; font-size:14px; width:64px;">Ink</span><span class="mono">#1F2430</span><span style="font-size:13px; color:#6b736e;">minimal &amp; serius</span></div>
+        </div>
+        <p style="font-size:13.5px; line-height:1.6; color:#6b736e; margin:14px 0 0;">Tema diterapkan sebagai CSS variable pada container Runner (lihat <span class="mono">themeStyle</span>). Tiap tema mendefinisikan <span class="mono">--primary</span>, <span class="mono">--paper</span>, <span class="mono">--ink</span>, <span class="mono">--accent</span>, <span class="mono">--line</span>, <span class="mono">--primary-soft</span>.</p>
+
+        <h3 style="font-size:16px; font-weight:700; color:#1d2624; margin:26px 0 10px;">Tipografi</h3>
+        <p style="font-size:14px; line-height:1.6; color:#46504c; margin:0;">Judul memakai <strong>Newsreader</strong> (serif, weight 500) untuk nuansa editorial; teks UI memakai <strong>Hanken Grotesk</strong>. Hindari Inter/Roboto. Font survei dapat dipilih per-form: <strong>Editorial</strong> (Newsreader), <strong>Modern</strong> (Bricolage Grotesque), <strong>Soft</strong> (Hanken), <strong>Serif</strong> (Spectral).</p>
+
+        <h3 style="font-size:16px; font-weight:700; color:#1d2624; margin:26px 0 10px;">Bentuk &amp; komponen</h3>
+        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px;">
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.55; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Radius: 11–16px untuk kartu &amp; input, 16–18px untuk modal. Shadow halus (<span class="mono">0 14px 38px rgba(29,38,36,.12)</span>), border <span class="mono">1px #e3ddd0</span>.</span></li>
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.55; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Pilihan jawaban (ChoiceButton): badge huruf A/B/C, state terpilih = border primary + bg primary-soft + ring. Hit area ≥ 44px.</span></li>
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.55; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Badge status: Published (primary-soft/primary), Draft (abu netral), Closed (aksen). Progress bar tipis di atas Runner.</span></li>
+        </ul>
+      </div>
+
+      <!-- 03 PER LAYAR -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">03</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Panduan per layar</h2></div>
+      <div style="padding-left:27px; display:flex; flex-direction:column; gap:18px; margin-bottom:44px; margin-top:10px;">
+
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Login</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Split layout: kiri panel berwarna brand berisi headline UVP + 3–4 manfaat berciri centang + bukti sosial; kanan kartu “Lanjut dengan Google” saja. Sertakan info “mode uji — hanya akun yang diundang”. Tautkan Ketentuan &amp; Privasi.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Dashboard</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Grid kartu survei: judul, meta (jumlah pertanyaan · respon), badge status, dan tren mini 7 hari. Hover mengangkat kartu. CTA utama “Survei baru”; aksi hapus halus (teks, bukan ikon ramai) dengan konfirmasi.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Builder</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Dua panel: daftar pertanyaan (pilih, tambah via menu tipe, urutkan naik/turun) + editor pertanyaan terpilih (judul, opsi yang bisa diedit/tambah/hapus, toggle wajib, hint logika). Header: Design · Results · Preview · Share · Publish. Mobile memakai toggle panel.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Design (panel)</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Preview welcome langsung di kiri; kontrol di kanan: tema (5 swatch), font (4 pasangan), unggah logo &amp; banner (klik/drag, tanpa email), judul &amp; subjudul welcome. Semua tersimpan per-form dan memengaruhi Runner.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Runner</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Welcome → satu pertanyaan per layar → thank-you. Progress bar, transisi masuk, validasi “wajib diisi”. Keyboard: Enter lanjut, angka 1–9 memilih. Tema &amp; font dari setting form. Auto-advance untuk pilihan/rating.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Results</p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Tab Ringkasan (3 statistik + distribusi bar per pertanyaan + rata-rata rating) dan Respons (tabel). Unduh CSV nyata. Angka harus jujur — tanpa metrik hiasan.</p>
+        </div>
+        <div style="background:#faf8f3; border:1px solid #ece6da; border-radius:14px; padding:20px 22px;">
+          <p style="font-weight:700; font-size:16px; margin:0; color:#1d2624;">Templates &amp; Legal <span style="font-size:12px; font-weight:600; color:#2f6f5e; background:#e7efe9; padding:2px 8px; border-radius:20px; margin-left:6px;">baru</span></p>
+          <p style="font-size:14px; line-height:1.6; color:#46504c; margin:8px 0 0;">Templates: galeri kerangka siap pakai (pertanyaan + tema + font terisi) → “Pakai” membuat draft. Legal: halaman Ketentuan/Privasi dengan tab, kontak via formulir tanpa email.</p>
+        </div>
+      </div>
+
+      <!-- 04 PEMETAAN KODE -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">04</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Pemetaan ke kode repo</h2></div>
+      <p style="font-size:15px; line-height:1.7; color:#46504c; margin:0 0 18px; padding-left:27px;">Berkas yang disentuh per area. Path relatif terhadap <span class="mono">frontend/src/</span>.</p>
+      <div style="padding-left:27px; display:flex; flex-direction:column; gap:14px; margin-bottom:44px;">
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Token &amp; tema</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">index.css</span> <span class="mono">lib/themes.ts</span> <span class="mono">lib/theme.ts</span> <span class="mono">components/ThemePicker.tsx</span> — ganti <span class="mono">THEME_PRESETS</span> jadi 5 tema koheren; muat Google Fonts (Newsreader, Hanken, Bricolage, Spectral).</p></div>
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Login</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">features/auth/LoginPage.tsx</span> — split layout UVP + tombol Google; tautan ke halaman Legal.</p></div>
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Dashboard</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">features/dashboard/FormsListPage.tsx</span> <span class="mono">dashboard/DashboardLayout.tsx</span> — kartu + tren mini + status; CTA &amp; hapus halus.</p></div>
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Builder &amp; Design</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">features/builder/BuilderPage.tsx</span> <span class="mono">QuestionEditor.tsx</span> <span class="mono">SortableQuestionList.tsx</span> <span class="mono">LogicEditor.tsx</span> <span class="mono">DesignDialog.tsx</span> — tambah pilihan font &amp; unggah logo/banner; tema koheren.</p></div>
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Runner</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">features/runner/RunnerPage.tsx</span> <span class="mono">runner/QuestionScreen.tsx</span> <span class="mono">lib/themes.ts</span> <span class="mono">lib/logicEngine.ts</span> — terapkan styling Soft Studio + font per-form.</p></div>
+        <div style="border-bottom:1px solid #ece6da; padding-bottom:14px;"><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Results</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;"><span class="mono">features/results/ResultsPage.tsx</span> — statistik + distribusi bar + ekspor CSV.</p></div>
+        <div><p style="font-weight:700; font-size:14.5px; margin:0 0 6px; color:#1d2624;">Baru: Templates &amp; Legal</p><p style="font-size:13.5px; line-height:1.6; color:#46504c; margin:0;">Tambah rute galeri template (seed pertanyaan + <span class="mono">api/forms.ts</span> createForm) dan halaman statis Ketentuan/Privasi dengan form kontak.</p></div>
+      </div>
+
+      <!-- 05 A11Y -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">05</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Aksesibilitas &amp; microcopy</h2></div>
+      <div style="padding-left:27px; margin-bottom:44px; margin-top:10px;">
+        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px;">
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.6; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Kontras teks ≥ 4.5:1; warna utama tiap tema sudah diuji untuk teks putih pada tombol.</span></li>
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.6; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Semua kontrol punya target ≥ 44px; fokus keyboard terlihat; Runner sepenuhnya bisa dengan keyboard.</span></li>
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.6; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Microcopy: hangat, ringkas, bahasa Indonesia santai. Tanda wajib jelas; error spesifik (“Pertanyaan ini wajib diisi.”).</span></li>
+          <li style="display:flex; gap:11px; font-size:14px; line-height:1.6; color:#46504c;"><span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:#d98e5a; flex-shrink:0;"></span><span>Hormati <span class="mono">prefers-reduced-motion</span>: kurangi transisi slide bila disetel.</span></li>
+        </ul>
+      </div>
+
+      <!-- 06 CHECKLIST -->
+      <div style="display:flex; align-items:baseline; gap:14px; margin-bottom:6px;"><span style="font-size:13px; font-weight:700; color:#2f6f5e;">06</span><h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:27px; color:#1d2624; margin:0;">Checklist handoff</h2></div>
+      <div style="padding-left:27px; margin-top:10px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Muat font &amp; tetapkan token tema di <span class="mono">index.css</span> + <span class="mono">themes.ts</span>.</span></div>
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Terapkan styling Soft Studio di Runner + QuestionScreen, uji semua tipe pertanyaan.</span></div>
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Tambah pilihan font + unggah logo/banner di DesignDialog; simpan ke settings form.</span></div>
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Perbarui Dashboard &amp; Results sesuai komposisi baru.</span></div>
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Tambah rute Templates &amp; Legal (form kontak tanpa email).</span></div>
+          <div style="display:flex; gap:12px; align-items:flex-start;"><span style="margin-top:1px; width:18px; height:18px; border-radius:5px; border:2px solid #cfe1d8; flex-shrink:0;"></span><span style="font-size:14px; color:#46504c;">Uji aksesibilitas (kontras, keyboard, reduced-motion) sebelum rilis.</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:48px; padding-top:24px; border-top:1px solid #ece6da; display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#9aa09b;">
+        <span>txsurvey · UX &amp; Design Handoff</span>
+        <span>Prototipe: Login · Studio · Runner · Legal</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

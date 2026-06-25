@@ -54,19 +54,19 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Edit question</h2>
+        <span className="label-eyebrow text-primary">{typeDef(draft.type).label}</span>
         <Button
           variant="ghost"
           size="sm"
           className="text-destructive"
           onClick={() => setConfirmDel(true)}
         >
-          <Trash2 /> Delete
+          <Trash2 /> Hapus
         </Button>
       </div>
 
       <div className="space-y-2">
-        <Label>Type</Label>
+        <Label>Tipe</Label>
         <SimpleSelect
           value={draft.type}
           onValueChange={(v) => onTypeChange(v as QuestionType)}
@@ -75,16 +75,17 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
       </div>
 
       <div className="space-y-2">
-        <Label>{def.isStatement ? "Statement text" : "Question"}</Label>
+        <Label>{def.isStatement ? "Teks pernyataan" : "Pertanyaan"}</Label>
         <Input
           value={draft.title}
-          placeholder={def.isStatement ? "Tell respondents something…" : "Ask a question…"}
+          placeholder={def.isStatement ? "Sampaikan sesuatu…" : "Tulis pertanyaan…"}
           onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+          className="font-display h-12 bg-background text-lg"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Description (optional)</Label>
+        <Label>Deskripsi (opsional)</Label>
         <Textarea
           value={draft.description ?? ""}
           onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
@@ -135,8 +136,8 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
       )}
 
       {!def.isStatement && (
-        <div className="flex items-center justify-between rounded-md border p-3">
-          <Label htmlFor="required">Required</Label>
+        <div className="flex items-center justify-between rounded-xl border bg-background p-3">
+          <Label htmlFor="required">Wajib diisi</Label>
           <Switch
             id="required"
             checked={!!draft.required}
@@ -147,10 +148,11 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
 
       <div className="flex justify-end">
         <Button
+          className="rounded-xl"
           disabled={!dirty || update.isPending}
           onClick={() => update.mutate({ qid: question.id, input: draft })}
         >
-          {update.isPending ? <Loader2 className="animate-spin" /> : null} Save question
+          {update.isPending ? <Loader2 className="animate-spin" /> : null} Simpan
         </Button>
       </div>
       {update.isError && (
@@ -180,30 +182,33 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
 function OptionsEditor({ options, onChange }: { options: Option[]; onChange: (o: Option[]) => void }) {
   const set = (i: number, label: string) =>
     onChange(options.map((o, idx) => (idx === i ? { ...o, label } : o)));
-  const add = () => onChange([...options, { id: "", label: `Option ${options.length + 1}` }]);
+  const add = () => onChange([...options, { id: "", label: `Pilihan ${options.length + 1}` }]);
   const remove = (i: number) => onChange(options.filter((_, idx) => idx !== i));
 
   return (
     <div className="space-y-2">
-      <Label>Options</Label>
+      <Label>Pilihan</Label>
       <div className="space-y-2">
         {options.map((o, i) => (
           <div key={i} className="flex items-center gap-2">
-            <Input value={o.label} onChange={(e) => set(i, e.target.value)} />
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-input text-xs font-semibold text-muted-foreground">
+              {String.fromCharCode(65 + i)}
+            </span>
+            <Input value={o.label} onChange={(e) => set(i, e.target.value)} className="bg-background" />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => remove(i)}
               disabled={options.length <= 1}
-              aria-label="Remove option"
+              aria-label="Hapus pilihan"
             >
               <X />
             </Button>
           </div>
         ))}
       </div>
-      <Button variant="outline" size="sm" onClick={add}>
-        <Plus /> Add option
+      <Button variant="outline" size="sm" className="rounded-lg" onClick={add}>
+        <Plus /> Tambah pilihan
       </Button>
     </div>
   );

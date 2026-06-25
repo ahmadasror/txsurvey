@@ -10,27 +10,39 @@ interface Props {
   value: AnswerValue | undefined;
   onChange: (v: AnswerValue) => void;
   onAdvance: () => void;
+  step: number;
+  total: number;
 }
 
 const letter = (i: number) => String.fromCharCode(65 + i);
+const pad = (n: number) => String(n).padStart(2, "0");
 
-export function QuestionScreen({ question: q, value, onChange, onAdvance }: Props) {
+const fieldClass =
+  "rounded-xl border-input bg-card text-lg focus-visible:ring-4 focus-visible:ring-primary/15 focus-visible:border-primary";
+
+export function QuestionScreen({ question: q, value, onChange, onAdvance, step, total }: Props) {
   const meta = q.metadata ?? {};
 
   return (
     <div className="w-full">
-      <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-        {q.title || "Untitled question"}
-        {q.required && <span className="ml-1 text-primary">*</span>}
-      </h1>
-      {q.description && <p className="mt-2 text-base text-muted-foreground">{q.description}</p>}
+      <div className="label-eyebrow flex items-center gap-1.5 text-primary">
+        <span className="tabular-nums">{pad(step)}</span>
+        <span aria-hidden className="opacity-40">→</span>
+        <span className="text-muted-foreground">dari {total}</span>
+      </div>
 
-      <div className="mt-6">
+      <h1 className="font-display mt-3 text-[27px] leading-[1.2] text-foreground sm:text-[32px]">
+        {q.title || "Pertanyaan tanpa judul"}
+        {q.required && <span className="ml-1 text-brand">*</span>}
+      </h1>
+      {q.description && <p className="text-body mt-2.5 text-[15px] sm:text-base">{q.description}</p>}
+
+      <div className="mt-7">
         {q.type === "short_text" && (
           <Input
             autoFocus
-            className="h-12 text-lg"
-            placeholder={meta.placeholder || "Type your answer…"}
+            className={cn("h-14", fieldClass)}
+            placeholder={meta.placeholder || "Tulis jawabanmu…"}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -39,8 +51,8 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
         {q.type === "long_text" && (
           <Textarea
             autoFocus
-            className="min-h-32 text-lg"
-            placeholder={meta.placeholder || "Type your answer…"}
+            className={cn("min-h-36 py-3", fieldClass)}
+            placeholder={meta.placeholder || "Tulis jawabanmu…"}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -50,8 +62,8 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
           <Input
             autoFocus
             type="email"
-            className="h-12 text-lg"
-            placeholder={meta.placeholder || "name@example.com"}
+            className={cn("h-14", fieldClass)}
+            placeholder={meta.placeholder || "nama@contoh.com"}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -61,8 +73,8 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
           <Input
             autoFocus
             type="number"
-            className="h-12 text-lg"
-            placeholder={meta.placeholder || "Type a number…"}
+            className={cn("h-14", fieldClass)}
+            placeholder={meta.placeholder || "Tulis angka…"}
             value={value === undefined ? "" : String(value)}
             onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
           />
@@ -72,7 +84,7 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
           <Input
             autoFocus
             type="date"
-            className="h-12 w-auto text-lg"
+            className={cn("h-14 w-auto", fieldClass)}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -81,12 +93,14 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
         {q.type === "yes_no" && (
           <div className="flex flex-col gap-3 sm:flex-row">
             {[
-              { label: "Yes", v: true },
-              { label: "No", v: false },
-            ].map((opt) => (
+              { label: "Ya", v: true },
+              { label: "Tidak", v: false },
+            ].map((opt, i) => (
               <ChoiceButton
                 key={opt.label}
                 selected={value === opt.v}
+                badge={letter(i)}
+                className="sm:flex-1"
                 onClick={() => {
                   onChange(opt.v);
                   onAdvance();
@@ -101,10 +115,10 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
         {(q.type === "multiple_choice" || q.type === "dropdown") &&
           (q.type === "dropdown" ? (
             <SimpleSelect
-              className="h-12 text-lg"
+              className={cn("h-14", fieldClass)}
               value={(value as string) ?? ""}
               onValueChange={(v) => onChange(v)}
-              placeholder="Select…"
+              placeholder="Pilih…"
               options={(meta.options ?? []).map((o) => ({ value: o.id, label: o.label }))}
             />
           ) : (
@@ -135,10 +149,7 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
                   key={o.id}
                   selected={checked}
                   badge={letter(i)}
-                  icon={checked ? <Check className="size-4" /> : undefined}
-                  onClick={() =>
-                    onChange(checked ? arr.filter((x) => x !== o.id) : [...arr, o.id])
-                  }
+                  onClick={() => onChange(checked ? arr.filter((x) => x !== o.id) : [...arr, o.id])}
                 >
                   {o.label}
                 </ChoiceButton>
@@ -148,7 +159,7 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
         )}
 
         {q.type === "rating" && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {Array.from({ length: meta.scale ?? 5 }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
@@ -157,10 +168,10 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
                   onAdvance();
                 }}
                 className={cn(
-                  "flex size-12 items-center justify-center rounded-md border text-lg font-medium transition-colors",
+                  "font-display grid size-12 place-items-center rounded-xl border text-lg transition-all",
                   value === n
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "hover:border-primary hover:bg-accent",
+                    ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15"
+                    : "border-input bg-card hover:-translate-y-0.5 hover:border-primary/50",
                 )}
               >
                 {n}
@@ -177,37 +188,38 @@ function ChoiceButton({
   children,
   selected,
   badge,
-  icon,
+  className,
   onClick,
 }: {
   children: React.ReactNode;
   selected: boolean;
   badge?: string;
-  icon?: React.ReactNode;
+  className?: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-base transition-colors",
+        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-base transition-all",
         selected
-          ? "border-primary bg-primary/10 ring-1 ring-primary"
-          : "hover:border-primary hover:bg-accent",
+          ? "border-primary bg-primary-soft ring-4 ring-primary/15"
+          : "border-input bg-card hover:-translate-y-0.5 hover:border-primary/50",
+        className,
       )}
     >
       {badge && (
         <span
           className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded border text-xs font-semibold",
-            selected ? "border-primary text-primary" : "text-muted-foreground",
+            "grid size-7 shrink-0 place-items-center rounded-lg border text-xs font-semibold transition-colors",
+            selected ? "border-primary bg-primary text-primary-foreground" : "border-input text-muted-foreground",
           )}
         >
           {badge}
         </span>
       )}
-      <span className="flex-1">{children}</span>
-      {icon}
+      <span className="flex-1 text-foreground">{children}</span>
+      {selected && <Check className="size-4 shrink-0 text-primary" />}
     </button>
   );
 }

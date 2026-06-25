@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  button, a { font-family: inherit; }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+  <!-- top bar -->
+  <div style="position:sticky; top:0; z-index:10; height:60px; background:var(--surface); border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 26px; gap:12px;">
+    <div style="width:30px; height:30px; border-radius:9px; background:var(--primary); display:flex; align-items:center; justify-content:center;"><span style="width:12px; height:12px; border-radius:4px; border:2.5px solid var(--paper); border-top-color:var(--accent); transform:rotate(45deg);"></span></div>
+    <span style="font-weight:800; font-size:17px; color:var(--ink); letter-spacing:-.01em;">txsurvey</span>
+    <a href="txsurvey Login.dc.html" style="margin-left:auto; font-size:13.5px; font-weight:600; color:var(--mute); text-decoration:none; display:flex; align-items:center; gap:6px;">← Kembali ke masuk</a>
+  </div>
+
+  <div style="max-width:760px; margin:0 auto; padding:44px 26px 80px;">
+    <!-- header -->
+    <div style="font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--primary);">Dokumen hukum</div>
+    <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:40px; line-height:1.1; color:var(--ink); margin:12px 0 0;">{{ docTitle }}</h1>
+    <p style="font-size:14px; color:var(--mute); margin:12px 0 0;">Terakhir diperbarui {{ docUpdated }}</p>
+
+    <!-- tabs -->
+    <div style="margin-top:24px; display:inline-flex; gap:4px; padding:4px; border-radius:13px; background:var(--primary-soft);">
+      <button style="{{ tabTermsStyle }}" onClick="{{ onTerms }}">Ketentuan Layanan</button>
+      <button style="{{ tabPrivacyStyle }}" onClick="{{ onPrivacy }}">Kebijakan Privasi</button>
+    </div>
+
+    <!-- intro -->
+    <p style="font-size:16.5px; line-height:1.65; color:var(--ink); margin:30px 0 0;">{{ docIntro }}</p>
+
+    <!-- sections -->
+    <div style="margin-top:8px;">
+      <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="6">
+        <section style="margin-top:34px;">
+          <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:22px; color:var(--ink); margin:0; display:flex; gap:12px; align-items:baseline;">
+            <span style="font-family:'Hanken Grotesk'; font-size:13px; font-weight:700; color:var(--primary); flex-shrink:0;">{{ sec.num }}</span>
+            <span>{{ sec.title }}</span>
+          </h2>
+          <div style="padding-left:30px; margin-top:10px;">
+            <sc-for list="{{ sec.paras }}" as="para" hint-placeholder-count="2">
+              <p style="font-size:15px; line-height:1.7; color:var(--body); margin:0 0 12px;">{{ para }}</p>
+            </sc-for>
+            <sc-if value="{{ sec.hasItems }}" hint-placeholder-val="{{ false }}">
+              <ul style="margin:4px 0 12px; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px;">
+                <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3">
+                  <li style="display:flex; gap:11px; align-items:flex-start; font-size:15px; line-height:1.55; color:var(--body);">
+                    <span style="margin-top:8px; width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0;"></span>
+                    <span>{{ it }}</span>
+                  </li>
+                </sc-for>
+              </ul>
+            </sc-if>
+          </div>
+        </section>
+      </sc-for>
+    </div>
+
+    <!-- contact form -->
+    <div style="margin-top:48px; padding:26px; border-radius:18px; background:var(--surface); border:1px solid var(--line);">
+      <h3 style="font-family:'Newsreader',serif; font-weight:500; font-size:22px; color:var(--ink); margin:0;">Ada pertanyaan soal dokumen ini?</h3>
+      <p style="font-size:14.5px; color:var(--mute); margin:8px 0 0; line-height:1.5;">Kirim lewat formulir ini — tanpa alamat email, tim kami akan menindaklanjuti di aplikasi.</p>
+
+      <sc-if value="{{ cidle }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:18px;">
+          <label style="font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Nama (opsional)</label>
+          <input style="{{ cInputStyle }}" value="{{ cName }}" onChange="{{ onCName }}" placeholder="Namamu" />
+          <label style="display:block; margin-top:14px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Pertanyaan</label>
+          <textarea style="{{ cAreaStyle }}" value="{{ cMsg }}" onChange="{{ onCMsg }}" placeholder="Tulis pertanyaanmu soal dokumen ini…"></textarea>
+          <button style="{{ cBtnStyle }}" onClick="{{ onContactSend }}">Kirim pertanyaan</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ csent }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:18px; display:flex; gap:13px; align-items:flex-start; padding:16px 18px; border-radius:13px; background:var(--primary-soft);">
+          <span style="width:30px; height:30px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="display:block; width:13px; height:7px; border-left:2.5px solid #fff; border-bottom:2.5px solid #fff; transform:rotate(-45deg); margin-top:-2px;"></span></span>
+          <div>
+            <p style="font-size:14.5px; font-weight:600; color:var(--ink); margin:0;">Terima kasih, pertanyaanmu terkirim.</p>
+            <p style="font-size:13.5px; color:var(--mute); margin:4px 0 0;">Kami akan menindaklanjuti lewat aplikasi.</p>
+            <button style="{{ cLinkStyle }}" onClick="{{ onResetContact }}">Kirim lagi</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <p style="font-size:12px; color:var(--mute); margin:18px 0 0; line-height:1.5;">Dokumen ini contoh dan bukan nasihat hukum.</p>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Pine&quot;,&quot;Sand&quot;,&quot;Grape&quot;,&quot;Coral&quot;,&quot;Ink&quot;],&quot;default&quot;:&quot;Pine&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { tab: "terms", cName: "", cMsg: "", csent: false };
+  PALETTES = {
+    Pine:  { paper:"#F4F1EA", surface:"#ffffff", ink:"#1d2624", body:"#46504c", mute:"#6b736e", line:"#e3ddd0", primary:"#2f6f5e", primarySoft:"#e7efe9", onPrimary:"#ffffff", accent:"#d98e5a" },
+    Sand:  { paper:"#FBF6EC", surface:"#ffffff", ink:"#2B2317", body:"#5c5240", mute:"#8a795a", line:"#e9ddc6", primary:"#C2772E", primarySoft:"#f6ead5", onPrimary:"#ffffff", accent:"#6B8F71" },
+    Grape: { paper:"#F7F4FF", surface:"#ffffff", ink:"#1A1530", body:"#4a4360", mute:"#7a7393", line:"#e3dcf7", primary:"#6C4CE0", primarySoft:"#ece6fc", onPrimary:"#ffffff", accent:"#FF6B5C" },
+    Coral: { paper:"#FFF4F0", surface:"#ffffff", ink:"#2A1A16", body:"#5a4339", mute:"#9a7a70", line:"#f3d8cf", primary:"#E5533D", primarySoft:"#fbe2db", onPrimary:"#ffffff", accent:"#2BB3A3" },
+    Ink:   { paper:"#F3F4F6", surface:"#ffffff", ink:"#11141B", body:"#3a4150", mute:"#6b7280", line:"#dfe2e7", primary:"#1F2430", primarySoft:"#e6e8ec", onPrimary:"#ffffff", accent:"#6C4CE0" },
+  };
+  pal() { return this.PALETTES[this.props.theme] || this.PALETTES.Pine; }
+  onContactSend() { if (!this.state.cMsg.trim()) return; this.setState({ csent: true }); }
+  resetContact() { this.setState({ cName: "", cMsg: "", csent: false }); }
+
+  DOCS = {
+    terms: {
+      title: "Ketentuan Layanan",
+      updated: "26 Juni 2026",
+      intro: "Ketentuan ini mengatur penggunaan txsurvey — alat pembuat survei online. Dengan masuk dan menggunakan layanan, kamu setuju pada ketentuan di bawah ini.",
+      sections: [
+        { title: "Penerimaan ketentuan", paras: ["Dengan mengakses atau menggunakan txsurvey, kamu menyatakan telah membaca, memahami, dan menyetujui Ketentuan ini serta Kebijakan Privasi kami. Bila kamu tidak setuju, mohon tidak menggunakan layanan."] },
+        { title: "Akun & akses", paras: ["Akses txsurvey hanya melalui Sign in with Google. Saat ini layanan berjalan dalam mode uji, sehingga hanya email yang ditambahkan tim sebagai test user yang dapat masuk."], items: ["Jaga kerahasiaan akun Google yang kamu gunakan untuk masuk.", "Kamu bertanggung jawab atas aktivitas yang terjadi di bawah akunmu.", "Segera beri tahu admin bila ada akses yang tidak sah."] },
+        { title: "Penggunaan yang dapat diterima", paras: ["Kamu setuju menggunakan txsurvey hanya untuk tujuan yang sah dan internal."], items: ["Tidak mengumpulkan data sensitif tanpa dasar dan persetujuan yang memadai.", "Tidak mengirim spam, konten melanggar hukum, atau menyalahgunakan tautan publik survei.", "Tidak mencoba meretas, membebani, atau merekayasa-balik layanan."] },
+        { title: "Konten & data survei", paras: ["Kamu memiliki seluruh isi survei dan jawaban responden yang kamu kumpulkan. Kami memproses data tersebut semata-mata untuk menjalankan layanan atas namamu, dan tidak mengklaim kepemilikan atasnya."] },
+        { title: "Ketersediaan layanan", paras: ["Layanan disediakan \u201csebagaimana adanya\u201d selama masa uji. Kami berupaya menjaga ketersediaan, namun tidak menjamin layanan bebas gangguan atau bebas galat, dan dapat melakukan pemeliharaan sewaktu-waktu."] },
+        { title: "Penghentian", paras: ["Kami dapat menangguhkan atau menghentikan akses bila terjadi pelanggaran ketentuan. Kamu juga dapat berhenti menggunakan layanan kapan saja; data dapat diekspor sebagai CSV sebelum penghentian."] },
+        { title: "Perubahan ketentuan", paras: ["Kami dapat memperbarui Ketentuan ini dari waktu ke waktu. Perubahan material akan diberitahukan melalui aplikasi. Penggunaan berkelanjutan setelah perubahan berarti kamu menyetujui versi terbaru."] },
+        { title: "Kontak", paras: ["Pertanyaan tentang Ketentuan ini dapat disampaikan melalui formulir di bagian bawah halaman ini."] },
+      ],
+    },
+    privacy: {
+      title: "Kebijakan Privasi",
+      updated: "26 Juni 2026",
+      intro: "Kebijakan ini menjelaskan data apa yang dikumpulkan txsurvey, bagaimana kami menggunakannya, dan hak kamu atas data tersebut.",
+      sections: [
+        { title: "Data yang kami kumpulkan", paras: ["Kami mengumpulkan data seminimal mungkin untuk menjalankan layanan."], items: ["Profil Google saat masuk: nama, alamat email, dan foto profil.", "Konten yang kamu buat: judul survei, pertanyaan, logika, dan pengaturan.", "Jawaban responden atas survei yang kamu bagikan.", "Log teknis terbatas: alamat IP dan waktu permintaan untuk keamanan dan rate limiting."] },
+        { title: "Cara kami menggunakan data", paras: ["Data digunakan untuk mengautentikasi kamu, menyimpan dan menampilkan survei, mengumpulkan serta menganalisis jawaban, dan menjaga keamanan layanan. Kami tidak menggunakan jawaban survei untuk iklan."] },
+        { title: "Berbagi data", paras: ["Kami tidak menjual data kamu. Data hanya diproses oleh penyedia infrastruktur yang diperlukan untuk menjalankan layanan, dan dapat diungkapkan bila diwajibkan oleh hukum yang berlaku."] },
+        { title: "Cookie & sesi", paras: ["Setelah masuk, kami menyimpan satu cookie sesi httpOnly untuk menjaga kamu tetap login. Cookie ini bukan untuk pelacakan lintas situs dan akan kedaluwarsa sesuai masa sesi."] },
+        { title: "Penyimpanan & keamanan", paras: ["Data disimpan pada basis data PostgreSQL dengan akses terbatas. Koneksi dilindungi HTTPS dan sesi ditandatangani secara kriptografis. Tidak ada sistem yang sepenuhnya bebas risiko, namun kami menerapkan praktik yang wajar."] },
+        { title: "Hak kamu", paras: ["Kamu dapat meminta akses, koreksi, atau penghapusan data pribadimu, serta mengekspor jawaban survei sebagai CSV kapan saja melalui halaman Results."] },
+        { title: "Retensi", paras: ["Data survei disimpan selama akunmu aktif atau selama dibutuhkan untuk tujuan pengumpulan. Saat survei atau akun dihapus, jawaban terkait akan dihapus secara permanen."] },
+        { title: "Kontak", paras: ["Permintaan terkait privasi dapat disampaikan melalui formulir di bagian bawah halaman ini dan akan kami tanggapi sesegera mungkin."] },
+      ],
+    },
+  };
+
+  renderVals() {
+    const p = this.pal();
+    const tab = this.state.tab;
+    const doc = this.DOCS[tab] || this.DOCS.terms;
+    const tabBase = { padding: "9px 16px", borderRadius: "10px", border: "none", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", background: "transparent", color: p.mute };
+    const tabActive = { ...tabBase, background: p.surface, color: p.ink, boxShadow: "0 1px 3px rgba(20,28,26,.12)" };
+    return {
+      rootStyle: {
+        minHeight: "100dvh", background: p.paper, color: p.ink, fontFamily: "'Hanken Grotesk',sans-serif",
+        "--primary": p.primary, "--primary-soft": p.primarySoft, "--paper": p.paper, "--surface": p.surface,
+        "--ink": p.ink, "--body": p.body, "--mute": p.mute, "--line": p.line, "--accent": p.accent,
+      },
+      docTitle: doc.title, docUpdated: doc.updated, docIntro: doc.intro,
+      onTerms: () => this.setState({ tab: "terms" }),
+      onPrivacy: () => this.setState({ tab: "privacy" }),
+      tabTermsStyle: tab === "terms" ? tabActive : tabBase,
+      tabPrivacyStyle: tab === "privacy" ? tabActive : tabBase,
+      cName: this.state.cName, cMsg: this.state.cMsg, csent: this.state.csent, cidle: !this.state.csent,
+      onCName: (e) => this.setState({ cName: e.target.value }),
+      onCMsg: (e) => this.setState({ cMsg: e.target.value }),
+      onContactSend: () => this.onContactSend(),
+      onResetContact: () => this.resetContact(),
+      cInputStyle: { width: "100%", marginTop: "6px", height: "46px", padding: "0 14px", borderRadius: "12px", border: "1px solid " + p.line, background: p.paper, fontSize: "15px", color: p.ink, outline: "none" },
+      cAreaStyle: { width: "100%", marginTop: "6px", minHeight: "96px", padding: "12px 14px", borderRadius: "12px", border: "1px solid " + p.line, background: p.paper, fontSize: "15px", color: p.ink, outline: "none", resize: "vertical", fontFamily: "'Hanken Grotesk',sans-serif", lineHeight: 1.5 },
+      cBtnStyle: { marginTop: "16px", height: "46px", padding: "0 20px", border: "none", borderRadius: "12px", background: p.primary, color: p.onPrimary, fontWeight: 700, fontSize: "14.5px", cursor: "pointer" },
+      cLinkStyle: { background: "none", border: "none", color: p.primary, fontWeight: 600, fontSize: "14px", cursor: "pointer", padding: 0, marginTop: "10px" },
+      sections: doc.sections.map((s, i) => ({
+        num: String(i + 1).padStart(2, "0"),
+        title: s.title,
+        paras: s.paras || [],
+        items: s.items || [],
+        hasItems: !!(s.items && s.items.length),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

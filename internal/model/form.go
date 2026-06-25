@@ -12,8 +12,9 @@ const (
 )
 
 // ThemeSettings selects the runner's color theme. Preset is one of the named
-// presets (corporate/fun/comical/girl/boy) resolved by the frontend; Accent is
-// a legacy single-color override (hex/hsl) kept for backward compatibility.
+// Soft Studio presets (pine/sand/grape/coral/ink) resolved by the frontend;
+// Accent is a legacy single-color override (hex/hsl) kept for backward
+// compatibility. Unknown/legacy preset ids fall back to the default (pine).
 type ThemeSettings struct {
 	Preset string `json:"preset,omitempty"`
 	Accent string `json:"accent,omitempty"`
@@ -31,6 +32,9 @@ type FormSettings struct {
 	LogoURL             string        `json:"logo_url,omitempty"`
 	ShowProgress        bool          `json:"show_progress"`
 	Theme               ThemeSettings `json:"theme"`
+	// Font is the per-form display font (editorial/modern/soft/serif),
+	// resolved by the frontend; empty means the default (editorial).
+	Font string `json:"font,omitempty"`
 }
 
 // Form is a creator's survey.

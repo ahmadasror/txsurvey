@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Spectral:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+  input, textarea { font-family: inherit; }
+  ::placeholder { color: var(--mute); opacity: .6; }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Dashboard">
+      <div style="height:62px; background:var(--surface); border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 26px; gap:12px;">
+        <div style="width:30px; height:30px; border-radius:9px; background:var(--primary); display:flex; align-items:center; justify-content:center;"><span style="width:12px; height:12px; border-radius:4px; border:2.5px solid var(--paper); border-top-color:var(--accent); transform:rotate(45deg);"></span></div>
+        <span style="font-family:'Hanken Grotesk'; font-weight:800; font-size:17px; color:var(--ink); letter-spacing:-.01em;">txsurvey</span>
+        <div style="margin-left:24px; display:flex; gap:4px;">
+          <span style="padding:7px 13px; border-radius:9px; background:var(--primary-soft); color:var(--primary); font-weight:600; font-size:13.5px; cursor:pointer;" onClick="{{ onNavSurveys }}">Surveys</span>
+          <span style="padding:7px 13px; border-radius:9px; color:var(--mute); font-weight:500; font-size:13.5px; cursor:pointer;" onClick="{{ onNavTemplates }}">Template</span>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:13.5px; color:var(--mute);">Rani · HR Ops</span>
+          <span title="Keluar" onClick="{{ onLogout }}" style="width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer;">R</span>
+        </div>
+      </div>
+
+      <div style="max-width:980px; margin:0 auto; padding:36px 26px 60px;">
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px;">
+          <div>
+            <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:34px; color:var(--ink); margin:0;">Surveimu</h1>
+            <p style="font-size:14px; color:var(--mute); margin:6px 0 0;">{{ dashSubtitle }}</p>
+          </div>
+          <button style="{{ primaryBtnStyle }}" onClick="{{ onNew }}"><span style="font-size:18px; line-height:1;">+</span> Survei baru</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <sc-for list="{{ formCards }}" as="f" hint-placeholder-count="4">
+            <div style="{{ f.cardStyle }}" onClick="{{ f.onOpen }}" onMouseEnter="{{ f.onEnter }}" onMouseLeave="{{ f.onLeave }}">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                <h3 style="font-size:17px; font-weight:700; color:var(--ink); margin:0;">{{ f.title }}</h3>
+                <span style="{{ f.statusStyle }}">{{ f.statusLabel }}</span>
+              </div>
+              <p style="font-size:13.5px; color:var(--mute); margin:10px 0 16px;">{{ f.meta }}</p>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:flex-end; gap:3px; height:30px; flex:1;">
+                  <sc-for list="{{ f.trend }}" as="b" hint-placeholder-count="7"><div style="{{ b.style }}"></div></sc-for>
+                </div>
+                <button style="margin-left:14px; padding:6px 10px; border-radius:9px; border:none; background:none; color:var(--mute); font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;" onClick="{{ f.onDelete }}" aria-label="Hapus" onMouseEnter="{{ f.onTrashEnter }}" onMouseLeave="{{ f.onTrashLeave }}">Hapus</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- New survey dialog -->
+    <sc-if value="{{ newOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ overlayStyle }}" onClick="{{ onCloseNew }}">
+        <div style="{{ dialogStyle }}" onClick="{{ stop }}">
+          <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:24px; color:var(--ink); margin:0;">Survei baru</h2>
+          <p style="font-size:14px; color:var(--mute); margin:6px 0 18px;">Beri judul dulu — tema bisa dipilih nanti di Design.</p>
+          <label style="font-size:12px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.04em;">Judul</label>
+          <input style="{{ inputStyle }}" placeholder="mis. Kepuasan Karyawan" value="{{ newTitle }}" onChange="{{ onNewTitle }}" onKeyDown="{{ onNewKey }}" autofocus="true" />
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:22px;">
+            <button style="{{ ghostBtnStyle }}" onClick="{{ onCloseNew }}">Batal</button>
+            <button style="{{ primaryBtnStyle }}" onClick="{{ onCreate }}">Buat survei</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Delete confirm -->
+    <sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ overlayStyle }}" onClick="{{ onCancelDelete }}">
+        <div style="{{ dialogStyle }}" onClick="{{ stop }}">
+          <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:23px; color:var(--ink); margin:0;">Hapus survei ini?</h2>
+          <p style="font-size:14.5px; line-height:1.5; color:var(--mute); margin:10px 0 0;">{{ deleteMsg }}</p>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:22px;">
+            <button style="{{ ghostBtnStyle }}" onClick="{{ onCancelDelete }}">Batal</button>
+            <button style="{{ dangerBtnStyle }}" onClick="{{ onConfirmDelete }}">Hapus</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <!-- ===================== BUILDER ===================== -->
+  <sc-if value="{{ isBuilder }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Builder">
+      <div style="background:var(--surface); border-bottom:1px solid var(--line); display:flex; align-items:center; padding:11px 16px; gap:10px; flex-wrap:wrap;">
+        <button style="width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:17px; cursor:pointer;" onClick="{{ onBackDash }}">←</button>
+        <input style="height:38px; min-width:200px; padding:0 12px; border-radius:10px; border:1px solid transparent; background:var(--paper); font-weight:700; font-size:15.5px; color:var(--ink); outline:none;" value="{{ bTitle }}" onChange="{{ onTitleEdit }}" />
+        <span style="{{ bStatusStyle }}">{{ bStatusLabel }}</span>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+          <button style="{{ outlineBtn }}" onClick="{{ onOpenDesign }}">Design</button>
+          <button style="{{ outlineBtn }}" onClick="{{ onResults }}">Results</button>
+          <button style="{{ outlineBtn }}" onClick="{{ onPreview }}">Preview</button>
+          <button style="{{ shareBtnStyle }}" onClick="{{ onShare }}">{{ shareLabel }}</button>
+          <button style="{{ publishBtnStyle }}" onClick="{{ onPublish }}">{{ publishLabel }}</button>
+        </div>
+      </div>
+
+      <div style="max-width:1040px; margin:0 auto; padding:22px 20px 60px; display:grid; grid-template-columns:280px 1fr; gap:22px;">
+        <!-- sidebar -->
+        <aside>
+          <div style="position:relative;">
+            <button style="width:100%; height:42px; border:1px solid var(--line); border-radius:12px; background:var(--surface); font-weight:600; font-size:13.5px; color:var(--ink); display:flex; align-items:center; justify-content:space-between; padding:0 14px; cursor:pointer;" onClick="{{ onToggleAddMenu }}"><span style="display:flex; align-items:center; gap:8px;"><span style="font-size:17px;">+</span> Tambah pertanyaan</span><span style="opacity:.5;">▾</span></button>
+            <sc-if value="{{ addMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; top:48px; left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:0 12px 30px rgba(20,28,26,.16); padding:6px; z-index:20;">
+                <sc-for list="{{ addTypes }}" as="t" hint-placeholder-count="5">
+                  <button style="width:100%; text-align:left; padding:9px 11px; border:none; background:none; border-radius:9px; font-size:13.5px; color:var(--ink); cursor:pointer;" onClick="{{ t.onClick }}">{{ t.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ hasQuestions }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ qList }}" as="q" hint-placeholder-count="4">
+                <div style="{{ q.rowStyle }}" onClick="{{ q.onClick }}">
+                  <span style="{{ q.badgeStyle }}">{{ q.num }}</span>
+                  <span style="font-size:13px; font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ q.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </aside>
+
+        <!-- editor -->
+        <section>
+          <sc-if value="{{ selExists }}" hint-placeholder-val="{{ true }}">
+            <div style="background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:26px;">
+              <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--primary); margin-bottom:16px;">
+                <span style="padding:3px 9px; border-radius:7px; background:var(--primary-soft);">{{ selTypeLabel }}</span>
+              </div>
+              <label style="font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Pertanyaan</label>
+              <input style="{{ titleInputStyle }}" value="{{ editTitle }}" onChange="{{ onEditTitle }}" placeholder="Tulis pertanyaanmu…" />
+
+              <sc-if value="{{ isChoiceEditor }}" hint-placeholder-val="{{ true }}">
+                <label style="display:block; margin-top:20px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Pilihan</label>
+                <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ editorOptions }}" as="o" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="{{ o.badgeStyle }}">{{ o.letter }}</span>
+                      <input style="{{ optInputStyle }}" value="{{ o.label }}" onChange="{{ o.onLabel }}" />
+                      <button style="width:30px; height:30px; border:none; background:none; color:var(--mute); font-size:18px; cursor:pointer; border-radius:8px;" onClick="{{ o.onRemove }}">×</button>
+                    </div>
+                  </sc-for>
+                  <button style="align-self:flex-start; margin-top:2px; padding:8px 13px; border:1px dashed var(--line); border-radius:10px; background:none; font-size:13px; font-weight:600; color:var(--primary); cursor:pointer;" onClick="{{ onAddOption }}">+ Tambah pilihan</button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isYesNoEditor }}" hint-placeholder-val="{{ false }}">
+                <label style="display:block; margin-top:20px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Pilihan</label>
+                <div style="margin-top:8px; display:flex; gap:8px;">
+                  <span style="padding:9px 16px; border:1px solid var(--line); border-radius:10px; font-size:14px;">Ya</span>
+                  <span style="padding:9px 16px; border:1px solid var(--line); border-radius:10px; font-size:14px;">Tidak</span>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isRatingEditor }}" hint-placeholder-val="{{ false }}">
+                <p style="margin-top:18px; font-size:13.5px; color:var(--mute);">{{ dScaleLabel }}</p>
+              </sc-if>
+
+              <sc-if value="{{ isTextEditor }}" hint-placeholder-val="{{ false }}">
+                <p style="margin-top:18px; font-size:13.5px; color:var(--mute);">Responden mengetik jawaban bebas.</p>
+              </sc-if>
+
+              <div style="margin-top:24px; display:flex; align-items:center; gap:20px; border-top:1px solid var(--line); padding-top:18px;">
+                <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onClick="{{ onToggleRequired }}">
+                  <span style="{{ reqToggleStyle }}"><span style="{{ reqKnobStyle }}"></span></span>
+                  <span style="font-size:13.5px; color:var(--ink); font-weight:500;">Wajib diisi</span>
+                </div>
+                <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+                  <button style="width:34px; height:34px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--mute); cursor:pointer;" onClick="{{ onMoveUp }}">↑</button>
+                  <button style="width:34px; height:34px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--mute); cursor:pointer;" onClick="{{ onMoveDown }}">↓</button>
+                  <button style="padding:0 13px; height:34px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:#c2483b; font-weight:600; font-size:13px; cursor:pointer;" onClick="{{ onDeleteQ }}">Hapus</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ notSel }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface); border:1px dashed var(--line); border-radius:18px; padding:56px; text-align:center; color:var(--mute); font-size:14px;">Tambah pertanyaan pertamamu untuk mulai menyusun.</div>
+          </sc-if>
+        </section>
+      </div>
+
+      <!-- Design dialog -->
+      <sc-if value="{{ designOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ overlayStyle }}" onClick="{{ onCloseDesign }}">
+          <div style="width:100%; max-width:780px; background:var(--surface); border-radius:20px; overflow:hidden; box-shadow:0 24px 60px rgba(20,28,26,.3);" onClick="{{ stop }}">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line);">
+              <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:22px; color:var(--ink); margin:0;">Design survei</h2>
+              <button style="width:34px; height:34px; border:none; background:none; color:var(--mute); font-size:22px; cursor:pointer; border-radius:8px;" onClick="{{ onCloseDesign }}">×</button>
+            </div>
+            <div style="display:grid; grid-template-columns:300px 1fr;">
+              <!-- live preview -->
+              <div style="padding:22px; border-right:1px solid var(--line); background:var(--paper);">
+                <div style="font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--mute); margin-bottom:10px;">Preview welcome</div>
+                <div style="{{ dPreviewStyle }}">
+                  <div style="{{ dBannerStyle }}"></div>
+                  <div style="padding:14px 20px 22px; text-align:center;">
+                    <div style="margin:-40px auto 0; width:54px; height:54px;">
+                      <div style="{{ dLogoStyle }}"><sc-if value="{{ noLogo }}" hint-placeholder-val="{{ true }}">Logo</sc-if></div>
+                    </div>
+                    <div style="{{ dEyebrowStyle }}; margin-top:14px;">Survei Internal</div>
+                    <h1 style="{{ dTitleStyle }}">{{ dWelcomeTitle }}</h1>
+                    <p style="{{ dDescStyle }}">{{ dWelcomeDesc }}</p>
+                    <button style="{{ dStartStyle }}">Mulai →</button>
+                  </div>
+                </div>
+              </div>
+              <!-- controls -->
+              <div style="padding:22px; max-height:62vh; overflow-y:auto;">
+                <label style="font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Tema</label>
+                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:8px;">
+                  <sc-for list="{{ dThemes }}" as="t" hint-placeholder-count="5">
+                    <div onClick="{{ t.onClick }}" style="cursor:pointer;">
+                      <div style="{{ t.swatchStyle }}"><span style="{{ t.dotStyle }}"></span></div>
+                      <div style="{{ t.labelStyle }}">{{ t.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <label style="display:block; margin-top:20px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Font</label>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                  <sc-for list="{{ dFonts }}" as="ft" hint-placeholder-count="4">
+                    <div style="{{ ft.rowStyle }}" onClick="{{ ft.onClick }}">
+                      <span style="{{ ft.labelStyle }}">{{ ft.label }}</span>
+                      <span style="{{ ft.sampleStyle }}">Aa</span>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <label style="display:block; margin-top:20px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Logo &amp; banner</label>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                  <label style="{{ uploadStyle }}" onDragOver="{{ onDragOver }}" onDrop="{{ onDropBanner }}">
+                    <input type="file" accept="image/*" style="display:none;" onChange="{{ onPickBanner }}" />
+                    <span>{{ bannerLabel }}</span>
+                  </label>
+                  <label style="{{ uploadStyle }}" onDragOver="{{ onDragOver }}" onDrop="{{ onDropLogo }}">
+                    <input type="file" accept="image/*" style="display:none;" onChange="{{ onPickLogo }}" />
+                    <span>{{ logoLabel }}</span>
+                  </label>
+                </div>
+
+                <label style="display:block; margin-top:20px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Judul welcome</label>
+                <input style="{{ inputStyle }}" value="{{ dTitleVal }}" onChange="{{ onWTitle }}" placeholder="{{ bTitle }}" />
+
+                <label style="display:block; margin-top:16px; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.05em;">Subjudul</label>
+                <textarea style="{{ dAreaStyle }}" value="{{ dDescVal }}" onChange="{{ onWDesc }}" placeholder="Beberapa pertanyaan singkat…"></textarea>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; padding:14px 22px; border-top:1px solid var(--line);">
+              <button style="{{ primaryBtnStyle }}" onClick="{{ onCloseDesign }}">Selesai</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===================== RESULTS ===================== -->
+  <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Results">
+      <div style="background:var(--surface); border-bottom:1px solid var(--line); padding:14px 20px 0;">
+        <div style="max-width:1040px; margin:0 auto; display:flex; align-items:center; gap:12px;">
+          <button style="width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:17px; cursor:pointer;" onClick="{{ onBackDashR }}">←</button>
+          <div style="min-width:0;">
+            <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:22px; color:var(--ink); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ rTitle }}</h1>
+            <p style="font-size:12.5px; color:var(--mute); margin:2px 0 0;">{{ rRespCount }}</p>
+          </div>
+          <div style="margin-left:auto; display:flex; gap:9px;">
+            <button style="{{ outlineBtn }}" onClick="{{ onEditFromResults }}">✎ Edit</button>
+            <button style="{{ primaryBtnStyle }}" onClick="{{ onDownload }}">↓ Download CSV</button>
+          </div>
+        </div>
+        <div style="max-width:1040px; margin:16px auto 0; display:flex; gap:6px;">
+          <button style="{{ tabSummaryStyle }}" onClick="{{ onTabSummary }}">Ringkasan</button>
+          <button style="{{ tabResponsesStyle }}" onClick="{{ onTabResponses }}">Respons</button>
+        </div>
+      </div>
+
+      <div style="max-width:1040px; margin:0 auto; padding:24px 20px 60px;">
+        <sc-if value="{{ hasResponses }}" hint-placeholder-val="{{ true }}">
+
+          <sc-if value="{{ isSummaryTab }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+              <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+                <div style="background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px;">
+                  <p style="font-size:13px; color:var(--mute); margin:0;">{{ st.label }}</p>
+                  <p style="{{ st.valStyle }}">{{ st.value }}</p>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:16px; display:flex; flex-direction:column; gap:14px;">
+              <sc-for list="{{ summaryCards }}" as="c" hint-placeholder-count="4">
+                <div style="background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px;">
+                  <h3 style="font-size:15px; font-weight:700; color:var(--ink); margin:0;">{{ c.title }}</h3>
+                  <p style="font-size:12.5px; color:var(--mute); margin:5px 0 0;">{{ c.answeredLabel }}</p>
+                  <div style="margin-top:14px;">
+                    <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="4">
+                      <div style="display:flex; align-items:center; gap:12px; font-size:13px; margin-bottom:10px;">
+                        <span style="width:130px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ b.label }}</span>
+                        <div style="flex:1; height:20px; background:var(--primary-soft); border-radius:6px; overflow:hidden;"><div style="{{ b.barStyle }}"></div></div>
+                        <span style="width:34px; text-align:right; color:var(--mute); font-variant-numeric:tabular-nums;">{{ b.count }}</span>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ c.average }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; align-items:baseline; gap:10px;"><span style="font-family:'Newsreader',serif; font-size:44px; color:var(--primary); line-height:1;">{{ c.average }}</span><span style="font-size:13px; color:var(--mute);">rata-rata · skala 1–10</span></div>
+                    </sc-if>
+                    <sc-if value="{{ c.openNote }}" hint-placeholder-val="{{ false }}">
+                      <p style="font-size:13.5px; color:var(--mute); margin:0;">{{ c.openNote }}</p>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isResponsesTab }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden;">
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
+                  <thead>
+                    <tr style="background:var(--paper);">
+                      <th style="text-align:left; padding:12px 16px; font-weight:600; color:var(--ink); white-space:nowrap;">Dikirim</th>
+                      <th style="text-align:left; padding:12px 16px; font-weight:600; color:var(--ink); white-space:nowrap;">Lama gabung</th>
+                      <th style="text-align:left; padding:12px 16px; font-weight:600; color:var(--ink); white-space:nowrap;">Payroll</th>
+                      <th style="text-align:left; padding:12px 16px; font-weight:600; color:var(--ink); white-space:nowrap;">NPS</th>
+                      <th style="text-align:left; padding:12px 16px; font-weight:600; color:var(--ink); white-space:nowrap;">Follow-up</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ responseRows }}" as="r" hint-placeholder-count="5">
+                      <tr style="border-top:1px solid var(--line);">
+                        <td style="padding:12px 16px; color:var(--mute); white-space:nowrap;">{{ r.t }}</td>
+                        <td style="padding:12px 16px; color:var(--ink);">{{ r.tenure }}</td>
+                        <td style="padding:12px 16px; color:var(--ink);">{{ r.payroll }}</td>
+                        <td style="padding:12px 16px; color:var(--ink); font-variant-numeric:tabular-nums;">{{ r.nps }}</td>
+                        <td style="padding:12px 16px; color:var(--ink);">{{ r.contact }}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </sc-if>
+
+        </sc-if>
+        <sc-if value="{{ noResponses }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:56px; text-align:center; color:var(--mute); font-size:14px;">Belum ada respon. Bagikan link survei untuk mulai mengumpulkan jawaban.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== TEMPLATES ===================== -->
+  <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Templates">
+      <div style="height:62px; background:var(--surface); border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 26px; gap:12px;">
+        <div style="width:30px; height:30px; border-radius:9px; background:var(--primary); display:flex; align-items:center; justify-content:center;"><span style="width:12px; height:12px; border-radius:4px; border:2.5px solid var(--paper); border-top-color:var(--accent); transform:rotate(45deg);"></span></div>
+        <span style="font-weight:800; font-size:17px; color:var(--ink); letter-spacing:-.01em;">txsurvey</span>
+        <div style="margin-left:24px; display:flex; gap:4px;">
+          <span style="padding:7px 13px; border-radius:9px; color:var(--mute); font-weight:500; font-size:13.5px; cursor:pointer;" onClick="{{ onNavSurveys }}">Surveys</span>
+          <span style="padding:7px 13px; border-radius:9px; background:var(--primary-soft); color:var(--primary); font-weight:600; font-size:13.5px; cursor:pointer;" onClick="{{ onNavTemplates }}">Template</span>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:13.5px; color:var(--mute);">Rani · HR Ops</span>
+          <span title="Keluar" onClick="{{ onLogout }}" style="width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer;">R</span>
+        </div>
+      </div>
+
+      <div style="max-width:980px; margin:0 auto; padding:36px 26px 60px;">
+        <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:34px; color:var(--ink); margin:0;">Mulai dari template</h1>
+        <p style="font-size:14px; color:var(--mute); margin:6px 0 24px;">Pilih kerangka siap pakai — pertanyaan, tema, dan font sudah terisi. Semuanya bisa diubah setelahnya.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <sc-for list="{{ templateCards }}" as="t" hint-placeholder-count="3">
+            <div style="background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; display:flex; flex-direction:column;">
+              <div style="{{ t.iconStyle }}"><span style="{{ t.iconInner }}"></span></div>
+              <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin:16px 0 0;">{{ t.title }}</h3>
+              <p style="font-size:13.5px; color:var(--mute); line-height:1.5; margin:8px 0 14px; flex:1;">{{ t.desc }}</p>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;">
+                <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="3"><span style="{{ c.style }}">{{ c.label }}</span></sc-for>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:14px;">
+                <span style="font-size:12.5px; color:var(--mute);">{{ t.metaLabel }}</span>
+                <button style="{{ t.useStyle }}" onClick="{{ t.onUse }}">Pakai →</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- SCREENS_END -->
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Pine&quot;,&quot;Sand&quot;,&quot;Grape&quot;,&quot;Coral&quot;,&quot;Ink&quot;],&quot;default&quot;:&quot;Pine&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  PALETTES = {
+    Pine:  { paper:"#F4F1EA", surface:"#ffffff", ink:"#1d2624", mute:"#6b736e", line:"#e3ddd0", primary:"#2f6f5e", primarySoft:"#e7efe9", onPrimary:"#ffffff", accent:"#d98e5a", ring:"rgba(47,111,94,.16)" },
+    Sand:  { paper:"#FBF6EC", surface:"#ffffff", ink:"#2B2317", mute:"#8a795a", line:"#e9ddc6", primary:"#C2772E", primarySoft:"#f6ead5", onPrimary:"#ffffff", accent:"#6B8F71", ring:"rgba(194,119,46,.16)" },
+    Grape: { paper:"#F7F4FF", surface:"#ffffff", ink:"#1A1530", mute:"#7a7393", line:"#e3dcf7", primary:"#6C4CE0", primarySoft:"#ece6fc", onPrimary:"#ffffff", accent:"#FF6B5C", ring:"rgba(108,76,224,.16)" },
+    Coral: { paper:"#FFF4F0", surface:"#ffffff", ink:"#2A1A16", mute:"#9a7a70", line:"#f3d8cf", primary:"#E5533D", primarySoft:"#fbe2db", onPrimary:"#ffffff", accent:"#2BB3A3", ring:"rgba(229,83,61,.16)" },
+    Ink:   { paper:"#F3F4F6", surface:"#ffffff", ink:"#11141B", mute:"#6b7280", line:"#dfe2e7", primary:"#1F2430", primarySoft:"#e6e8ec", onPrimary:"#ffffff", accent:"#6C4CE0", ring:"rgba(31,36,48,.14)" },
+  };
+
+  state = {
+    screen: "dashboard",
+    activeId: "pulse",
+    selectedQId: "payroll",
+    resultsTab: "summary",
+    newOpen: false, newTitle: "",
+    deleteId: null,
+    addMenuOpen: false,
+    copied: false,
+    designOpen: false,
+    forms: [
+      {
+        id: "pulse", title: "Pulse Karyawan · Q2", status: "published", responseCount: 128, completion: 86,
+        settings: { theme: "Pine", font: "editorial", welcomeTitle: "Apa kabar pengalaman kerjamu sejauh ini?", welcomeDesc: "Lima pertanyaan singkat soal pengalaman kerjamu. Jujur aja — jawabannya anonim." },
+        trend: [60, 80, 45, 100, 72, 55, 88],
+        questions: [
+          { id: "tenure", type: "choice", required: true, title: "Sudah berapa lama kamu bergabung dengan tim?", options: [{ id: "o1", label: "Kurang dari 3 bulan" }, { id: "o2", label: "3–12 bulan" }, { id: "o3", label: "1–3 tahun" }, { id: "o4", label: "Lebih dari 3 tahun" }] },
+          { id: "payroll", type: "choice", required: true, title: "Seberapa puas kamu dengan proses payroll bulan ini?", options: [{ id: "p1", label: "Sangat puas" }, { id: "p2", label: "Cukup puas" }, { id: "p3", label: "Biasa saja" }, { id: "p4", label: "Kurang puas" }] },
+          { id: "nps", type: "rating", required: true, scale: 10, title: "Seberapa mungkin kamu merekomendasikan tempat kerja ini ke teman?", description: "1 = nggak banget · 10 = wajib banget" },
+          { id: "improve", type: "long", required: false, title: "Apa satu hal yang paling bisa kami perbaiki?", placeholder: "Tulis jawabanmu…" },
+          { id: "contact", type: "yes_no", required: true, title: "Boleh tim HR menghubungimu untuk menindaklanjuti?" },
+        ],
+        analytics: {
+          tenure: { answered: 128, options: [{ label: "Kurang dari 3 bulan", count: 18 }, { label: "3–12 bulan", count: 44 }, { label: "1–3 tahun", count: 52 }, { label: "Lebih dari 3 tahun", count: 14 }] },
+          payroll: { answered: 124, options: [{ label: "Sangat puas", count: 57 }, { label: "Cukup puas", count: 42 }, { label: "Biasa saja", count: 18 }, { label: "Kurang puas", count: 7 }] },
+          nps: { answered: 120, average: 8.4 },
+          improve: { answered: 73 },
+          contact: { answered: 126, options: [{ label: "Ya", count: 88 }, { label: "Tidak", count: 38 }] },
+        },
+      },
+      { id: "onboard", title: "Feedback Onboarding", status: "published", responseCount: 42, completion: 79, trend: [40, 65, 90, 50, 70, 35, 60], questions: [], analytics: {} },
+      { id: "it", title: "Kepuasan Layanan IT", status: "draft", responseCount: 0, completion: 0, trend: [20, 30, 15, 25, 18, 22, 16], questions: [], analytics: {} },
+      { id: "exit", title: "Exit Interview", status: "closed", responseCount: 9, completion: 92, trend: [50, 30, 40, 20, 35, 25, 45], questions: [], analytics: {} },
+    ],
+  };
+
+  sampleResponses = [
+    { t: "26 Jun 09:14", tenure: "1–3 tahun", payroll: "Sangat puas", nps: 9, contact: "Ya" },
+    { t: "26 Jun 08:50", tenure: "3–12 bulan", payroll: "Cukup puas", nps: 8, contact: "Tidak" },
+    { t: "25 Jun 17:32", tenure: "Lebih dari 3 tahun", payroll: "Sangat puas", nps: 10, contact: "Ya" },
+    { t: "25 Jun 16:05", tenure: "Kurang dari 3 bulan", payroll: "Biasa saja", nps: 6, contact: "Tidak" },
+    { t: "25 Jun 14:48", tenure: "1–3 tahun", payroll: "Kurang puas", nps: 4, contact: "Ya" },
+  ];
+
+  TYPE_LABEL = { choice: "Pilihan ganda", yes_no: "Ya / Tidak", rating: "Rating", long: "Teks panjang", short: "Teks singkat" };
+
+  FONTS = {
+    editorial: { label: "Editorial", display: "'Newsreader',serif", body: "'Hanken Grotesk',sans-serif" },
+    modern: { label: "Modern", display: "'Bricolage Grotesque',sans-serif", body: "'Hanken Grotesk',sans-serif" },
+    soft: { label: "Soft", display: "'Hanken Grotesk',sans-serif", body: "'Hanken Grotesk',sans-serif" },
+    serif: { label: "Serif", display: "'Spectral',serif", body: "'Hanken Grotesk',sans-serif" },
+  };
+  pal() { return this.PALETTES[this.props.theme] || this.PALETTES.Pine; }
+  palOf(id) { return this.PALETTES[id] || this.PALETTES[this.props.theme] || this.PALETTES.Pine; }
+  active() { return this.state.forms.find((f) => f.id === this.state.activeId); }
+  uid(p) { return p + Math.random().toString(36).slice(2, 7); }
+  mutateActive(fn) {
+    this.setState((s) => ({ forms: s.forms.map((f) => (f.id === s.activeId ? fn({ ...f }) : f)) }));
+  }
+  updateSettings(patch) { this.mutateActive((f) => { f.settings = { ...(f.settings || {}), ...patch }; return f; }); }
+  _readImg(file, key) { if (!file) return; const r = new FileReader(); r.onload = () => this.updateSettings({ [key]: r.result }); r.readAsDataURL(file); }
+
+  // navigation
+  openForm(id) { const f = this.state.forms.find((x) => x.id === id); this.setState({ screen: "builder", activeId: id, selectedQId: f && f.questions[0] ? f.questions[0].id : null }); }
+  goDashboard() { this.setState({ screen: "dashboard", addMenuOpen: false }); }
+  goResults() { this.setState({ screen: "results", resultsTab: "summary", addMenuOpen: false }); }
+  goBuilder() { this.setState({ screen: "builder" }); }
+
+  // new survey
+  openNew() { this.setState({ newOpen: true, newTitle: "" }); }
+  closeNew() { this.setState({ newOpen: false }); }
+  createSurvey() {
+    const title = (this.state.newTitle || "").trim() || "Survei tanpa judul";
+    const id = this.uid("f");
+    const form = { id, title, status: "draft", responseCount: 0, completion: 0, trend: [12, 16, 10, 14, 11, 13, 12], questions: [], analytics: {} };
+    this.setState((s) => ({ forms: [form, ...s.forms], newOpen: false, screen: "builder", activeId: id, selectedQId: null }));
+  }
+
+  TEMPLATES = [
+    { id: "pulse", title: "Pulse Karyawan", theme: "Pine", font: "editorial", minutes: 2,
+      desc: "Cek rutin kepuasan, payroll, dan eNPS tim — pas untuk tiap kuartal.",
+      welcomeTitle: "Apa kabar kerjamu kuartal ini?", welcomeDesc: "Lima pertanyaan singkat. Jawabanmu anonim.",
+      questions: [
+        { type: "choice", required: true, title: "Sudah berapa lama kamu bergabung dengan tim?", options: ["Kurang dari 3 bulan", "3–12 bulan", "1–3 tahun", "Lebih dari 3 tahun"] },
+        { type: "choice", required: true, title: "Seberapa puas kamu dengan proses payroll bulan ini?", options: ["Sangat puas", "Cukup puas", "Biasa saja", "Kurang puas"] },
+        { type: "rating", required: true, scale: 10, title: "Seberapa mungkin kamu merekomendasikan tempat kerja ini ke teman?", description: "1 = nggak banget · 10 = wajib banget" },
+        { type: "long", required: false, title: "Apa satu hal yang paling bisa kami perbaiki?" },
+        { type: "yes_no", required: true, title: "Boleh tim HR menghubungimu untuk menindaklanjuti?" },
+      ] },
+    { id: "onboarding", title: "Feedback Onboarding", theme: "Sand", font: "editorial", minutes: 3,
+      desc: "Pengalaman karyawan baru di 30/60/90 hari pertama.",
+      welcomeTitle: "Gimana minggu-minggu pertamamu?", welcomeDesc: "Bantu kami bikin onboarding lebih baik.",
+      questions: [
+        { type: "rating", required: true, scale: 5, title: "Sejelas apa peran & ekspektasi kerjamu?", description: "1 = bingung · 5 = sangat jelas" },
+        { type: "choice", required: true, title: "Apakah pelatihan awal cukup membekali kamu?", options: ["Lebih dari cukup", "Cukup", "Kurang", "Belum ada pelatihan"] },
+        { type: "yes_no", required: true, title: "Apakah buddy / mentor-mu membantu?" },
+        { type: "long", required: false, title: "Apa yang paling berkesan dari onboarding-mu?" },
+        { type: "long", required: false, title: "Satu hal yang sebaiknya kami ubah?" },
+      ] },
+    { id: "itcsat", title: "Kepuasan Layanan IT", theme: "Ink", font: "soft", minutes: 2,
+      desc: "CSAT untuk tiket & layanan internal IT.",
+      welcomeTitle: "Bagaimana pengalamanmu dengan tim IT?", welcomeDesc: "Masukanmu bantu kami merespons lebih cepat.",
+      questions: [
+        { type: "choice", required: true, title: "Layanan apa yang kamu hubungi?", options: ["Akun & akses", "Perangkat / laptop", "Jaringan & internet", "Aplikasi internal", "Lainnya"] },
+        { type: "yes_no", required: true, title: "Apakah masalahmu terselesaikan?" },
+        { type: "rating", required: true, scale: 5, title: "Seberapa cepat respons yang kamu terima?", description: "1 = lambat · 5 = sangat cepat" },
+        { type: "choice", required: true, title: "Seberapa puas kamu secara keseluruhan?", options: ["Sangat puas", "Puas", "Biasa saja", "Tidak puas"] },
+        { type: "long", required: false, title: "Ada saran untuk tim IT?" },
+      ] },
+  ];
+  goTemplates() { this.setState({ screen: "templates", addMenuOpen: false }); }
+  useTemplate(t) {
+    const id = this.uid("f");
+    const questions = t.questions.map((q) => {
+      const qq = { id: this.uid("q"), type: q.type, required: !!q.required, title: q.title };
+      if (q.description) qq.description = q.description;
+      if (q.options) qq.options = q.options.map((l) => ({ id: this.uid("o"), label: l }));
+      if (q.scale) qq.scale = q.scale;
+      if (q.type === "long" || q.type === "short") qq.placeholder = "Tulis jawabanmu…";
+      return qq;
+    });
+    const form = { id, title: t.title, status: "draft", responseCount: 0, completion: 0, trend: [12, 16, 10, 14, 11, 13, 12], questions, analytics: {}, settings: { theme: t.theme, font: t.font, welcomeTitle: t.welcomeTitle, welcomeDesc: t.welcomeDesc } };
+    this.setState((s) => ({ forms: [form, ...s.forms], screen: "builder", activeId: id, selectedQId: questions[0] ? questions[0].id : null }));
+  }
+
+  // delete
+  askDelete(id) { this.setState({ deleteId: id }); }
+  cancelDelete() { this.setState({ deleteId: null }); }
+  confirmDelete() { this.setState((s) => ({ forms: s.forms.filter((f) => f.id !== s.deleteId), deleteId: null })); }
+
+  // builder edits
+  selectQ(id) { this.setState({ selectedQId: id, addMenuOpen: false }); }
+  addQuestion(type) {
+    const id = this.uid("q");
+    const base = { id, type, required: false, title: "" };
+    if (type === "choice") base.options = [{ id: this.uid("o"), label: "Pilihan 1" }, { id: this.uid("o"), label: "Pilihan 2" }];
+    if (type === "rating") base.scale = 5;
+    if (type === "long" || type === "short") base.placeholder = "Tulis jawabanmu…";
+    this.mutateActive((f) => { f.questions = [...f.questions, base]; return f; });
+    this.setState({ selectedQId: id, addMenuOpen: false });
+  }
+  deleteQ(id) {
+    this.mutateActive((f) => { f.questions = f.questions.filter((q) => q.id !== id); return f; });
+    this.setState((s) => { const f = s.forms.find((x) => x.id === s.activeId); const rest = f.questions.filter((q) => q.id !== id); return { selectedQId: s.selectedQId === id ? (rest[0] ? rest[0].id : null) : s.selectedQId }; });
+  }
+  moveQ(id, dir) {
+    this.mutateActive((f) => { const qs = [...f.questions]; const i = qs.findIndex((q) => q.id === id); const j = i + dir; if (i < 0 || j < 0 || j >= qs.length) return f; [qs[i], qs[j]] = [qs[j], qs[i]]; f.questions = qs; return f; });
+  }
+  updateQ(id, patch) { this.mutateActive((f) => { f.questions = f.questions.map((q) => (q.id === id ? { ...q, ...patch } : q)); return f; }); }
+  updateOption(qid, oid, label) { this.mutateActive((f) => { f.questions = f.questions.map((q) => (q.id === qid ? { ...q, options: q.options.map((o) => (o.id === oid ? { ...o, label } : o)) } : q)); return f; }); }
+  addOption(qid) { this.mutateActive((f) => { f.questions = f.questions.map((q) => (q.id === qid ? { ...q, options: [...q.options, { id: this.uid("o"), label: "Pilihan baru" }] } : q)); return f; }); }
+  removeOption(qid, oid) { this.mutateActive((f) => { f.questions = f.questions.map((q) => (q.id === qid && q.options.length > 1 ? { ...q, options: q.options.filter((o) => o.id !== oid) } : q)); return f; }); }
+  togglePublish() { this.mutateActive((f) => { f.status = f.status === "published" ? "draft" : "published"; return f; }); }
+  copyLink() { try { navigator.clipboard.writeText("https://ct.tuxceria.biz.id/txsurvey/r/" + this.state.activeId); } catch (e) {} this.setState({ copied: true }); clearTimeout(this._c); this._c = setTimeout(() => this.setState({ copied: false }), 1500); }
+
+  downloadCsv() {
+    const f = this.active(); if (!f) return;
+    const cols = ["Dikirim", "Lama gabung", "Payroll", "NPS", "Follow-up"];
+    const rows = this.sampleResponses.map((r) => [r.t, r.tenure, r.payroll, r.nps, r.contact]);
+    const csv = [cols, ...rows].map((row) => row.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a");
+    a.href = url; a.download = (f.title || "survey") + ".csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  _renderBuilder(vals, p, s) {
+    if (s.screen !== "builder") return;
+    const f = this.active();
+    if (!f) return;
+    const outlineBtn = { height: "38px", padding: "0 13px", border: "1px solid " + p.line, borderRadius: "11px", background: p.surface, color: p.ink, fontWeight: 600, fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer" };
+
+    vals.bTitle = f.title;
+    vals.onTitleEdit = (e) => this.mutateActive((ff) => { ff.title = e.target.value; return ff; });
+    vals.isPublished = f.status === "published";
+    vals.bStatusLabel = f.status === "published" ? "Published" : f.status === "closed" ? "Closed" : "Draft";
+    vals.bStatusStyle = { padding: "3px 10px", borderRadius: "20px", background: f.status === "published" ? p.primarySoft : "rgba(0,0,0,.05)", color: f.status === "published" ? p.primary : p.mute, fontSize: "11px", fontWeight: 700 };
+    vals.outlineBtn = outlineBtn;
+    vals.publishLabel = f.status === "published" ? "Unpublish" : "Publish";
+    vals.publishBtnStyle = f.status === "published" ? { ...outlineBtn, height: "38px" } : { ...vals.primaryBtnStyle, height: "38px" };
+    vals.onPublish = () => this.togglePublish();
+    vals.shareLabel = s.copied ? "Tersalin ✓" : "Share link";
+    vals.shareBtnStyle = { ...outlineBtn, color: p.primary, borderColor: p.line };
+    vals.onShare = () => this.copyLink();
+    vals.onResults = () => this.goResults();
+    vals.onPreview = () => window.open(encodeURI("txsurvey Runner.dc.html"), "_blank");
+    vals.onBackDash = () => this.goDashboard();
+
+    // design dialog
+    const dst = f.settings || {};
+    const ftheme = dst.theme || this.props.theme || "Pine";
+    const pp = this.palOf(ftheme);
+    const fk = dst.font || "editorial";
+    const font = this.FONTS[fk] || this.FONTS.editorial;
+    vals.designOpen = s.designOpen;
+    vals.onOpenDesign = () => this.setState({ designOpen: true });
+    vals.onCloseDesign = () => this.setState({ designOpen: false });
+    vals.bannerId = "banner-" + f.id;
+    vals.logoId = "logo-" + f.id;
+    vals.dPreviewStyle = { background: pp.paper, borderRadius: "16px", border: "1px solid " + pp.line, overflow: "hidden" };
+    vals.dWelcomeTitle = dst.welcomeTitle || f.title;
+    vals.dWelcomeDesc = dst.welcomeDesc || "Beberapa pertanyaan singkat. Jawabanmu sangat berarti.";
+    vals.dEyebrowStyle = { fontFamily: font.body, fontSize: "10px", fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase", color: pp.primary };
+    vals.dTitleStyle = { fontFamily: font.display, fontWeight: 500, fontSize: "21px", lineHeight: 1.15, color: pp.ink, margin: "8px 0 0" };
+    vals.dDescStyle = { fontFamily: font.body, fontSize: "13px", color: pp.mute, margin: "9px 0 0", lineHeight: 1.5 };
+    vals.dStartStyle = { marginTop: "16px", height: "40px", padding: "0 18px", border: "none", borderRadius: "11px", background: pp.primary, color: pp.onPrimary, fontFamily: font.body, fontWeight: 700, fontSize: "13.5px", cursor: "pointer" };
+    vals.bannerUrl = dst.bannerUrl || ""; vals.logoUrl = dst.logoUrl || "";
+    vals.hasBanner = !!dst.bannerUrl; vals.noBanner = !dst.bannerUrl;
+    vals.hasLogo = !!dst.logoUrl; vals.noLogo = !dst.logoUrl;
+    vals.dBannerStyle = dst.bannerUrl
+      ? { width: "100%", height: "80px", background: 'center/cover no-repeat url("' + dst.bannerUrl + '")' }
+      : { width: "100%", height: "80px", background: pp.primarySoft };
+    vals.dLogoStyle = { width: "54px", height: "54px", borderRadius: "50%", boxShadow: "0 0 0 3px " + pp.paper, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 600, color: pp.mute, fontFamily: font.body, background: dst.logoUrl ? 'center/cover no-repeat url("' + dst.logoUrl + '")' : pp.primarySoft };
+    vals.onDragOver = (e) => e.preventDefault();
+    vals.onPickBanner = (e) => this._readImg(e.target.files && e.target.files[0], "bannerUrl");
+    vals.onDropBanner = (e) => { e.preventDefault(); this._readImg(e.dataTransfer.files && e.dataTransfer.files[0], "bannerUrl"); };
+    vals.onPickLogo = (e) => this._readImg(e.target.files && e.target.files[0], "logoUrl");
+    vals.onDropLogo = (e) => { e.preventDefault(); this._readImg(e.dataTransfer.files && e.dataTransfer.files[0], "logoUrl"); };
+    vals.bannerLabel = dst.bannerUrl ? "Banner terpasang · ganti" : "Pilih / tarik banner";
+    vals.logoLabel = dst.logoUrl ? "Logo terpasang · ganti" : "Pilih / tarik logo";
+    vals.uploadStyle = { flex: 1, minHeight: "58px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "10px", border: "1px dashed " + p.line, borderRadius: "12px", background: p.paper, color: p.mute, fontSize: "12.5px", fontWeight: 600, cursor: "pointer" };
+    vals.dThemes = Object.keys(this.PALETTES).map((id) => {
+      const pq = this.PALETTES[id]; const sel = id === ftheme;
+      return { id, label: id, onClick: () => this.updateSettings({ theme: id }),
+        swatchStyle: { width: "100%", height: "34px", borderRadius: "9px", background: pq.paper, border: sel ? "2px solid " + pq.primary : "1px solid " + pp.line, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+        dotStyle: { width: "15px", height: "15px", borderRadius: "5px", background: pq.primary },
+        labelStyle: { fontSize: "10.5px", color: pp.mute, textAlign: "center", marginTop: "4px", fontWeight: sel ? 700 : 500 } };
+    });
+    vals.dFonts = Object.keys(this.FONTS).map((id) => {
+      const ff = this.FONTS[id]; const sel = id === fk;
+      return { id, label: ff.label, onClick: () => this.updateSettings({ font: id }),
+        rowStyle: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", borderRadius: "11px", cursor: "pointer", border: sel ? "1.5px solid " + pp.primary : "1px solid " + pp.line, background: sel ? pp.primarySoft : pp.surface },
+        labelStyle: { fontSize: "13px", fontWeight: 600, color: pp.ink },
+        sampleStyle: { fontFamily: ff.display, fontSize: "19px", color: pp.ink } };
+    });
+    vals.dTitleVal = dst.welcomeTitle || "";
+    vals.dDescVal = dst.welcomeDesc || "";
+    vals.onWTitle = (e) => this.updateSettings({ welcomeTitle: e.target.value });
+    vals.onWDesc = (e) => this.updateSettings({ welcomeDesc: e.target.value });
+    vals.dAreaStyle = { width: "100%", marginTop: "6px", minHeight: "72px", padding: "11px 13px", borderRadius: "12px", border: "1px solid " + p.line, background: p.surface, fontSize: "14px", color: p.ink, outline: "none", resize: "vertical", fontFamily: "'Hanken Grotesk',sans-serif", lineHeight: 1.5 };
+
+    // add menu
+    vals.addMenuOpen = s.addMenuOpen;
+    vals.onToggleAddMenu = () => this.setState((st) => ({ addMenuOpen: !st.addMenuOpen }));
+    vals.addTypes = [
+      { label: "Pilihan ganda", onClick: () => this.addQuestion("choice") },
+      { label: "Ya / Tidak", onClick: () => this.addQuestion("yes_no") },
+      { label: "Rating", onClick: () => this.addQuestion("rating") },
+      { label: "Teks panjang", onClick: () => this.addQuestion("long") },
+      { label: "Teks singkat", onClick: () => this.addQuestion("short") },
+    ];
+
+    vals.hasQuestions = f.questions.length > 0;
+    const badge = { display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", borderRadius: "7px", fontSize: "11px", fontWeight: 700, flexShrink: 0 };
+    vals.qList = f.questions.map((q, i) => {
+      const sel = q.id === s.selectedQId;
+      return {
+        label: q.title || this.TYPE_LABEL[q.type] || "Pertanyaan",
+        num: i + 1, selected: sel,
+        onClick: () => this.selectQ(q.id),
+        rowStyle: { display: "flex", alignItems: "center", gap: "10px", padding: "11px 12px", borderRadius: "11px", cursor: "pointer", background: sel ? p.primarySoft : p.surface, border: "1px solid " + (sel ? p.primary : p.line) },
+        badgeStyle: { ...badge, background: sel ? p.primary : "rgba(0,0,0,.05)", color: sel ? p.onPrimary : p.mute },
+      };
+    });
+
+    const q = f.questions.find((x) => x.id === s.selectedQId);
+    vals.selExists = !!q;
+    vals.notSel = !q;
+    if (q) {
+      vals.selTypeLabel = this.TYPE_LABEL[q.type] || q.type;
+      vals.editTitle = q.title;
+      vals.onEditTitle = (e) => this.updateQ(q.id, { title: e.target.value });
+      vals.selRequired = q.required;
+      vals.onToggleRequired = () => this.updateQ(q.id, { required: !q.required });
+      vals.reqToggleStyle = { width: "40px", height: "23px", borderRadius: "20px", background: q.required ? p.primary : p.line, position: "relative", cursor: "pointer", transition: "background .15s", flexShrink: 0 };
+      vals.reqKnobStyle = { position: "absolute", top: "2px", left: q.required ? "19px" : "2px", width: "19px", height: "19px", borderRadius: "50%", background: "#fff", transition: "left .15s", boxShadow: "0 1px 2px rgba(0,0,0,.2)" };
+      vals.isChoiceEditor = q.type === "choice";
+      vals.isRatingEditor = q.type === "rating";
+      vals.dScaleLabel = "Skala 1–" + (q.scale || 5) + " — responden memilih satu angka.";
+      vals.isTextEditor = q.type === "long" || q.type === "short";
+      vals.isYesNoEditor = q.type === "yes_no";
+      const obadge = { display: "flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "6px", border: "1px solid " + p.line, color: p.mute, fontSize: "11px", fontWeight: 700, flexShrink: 0 };
+      vals.editorOptions = (q.options || []).map((o, i) => ({
+        letter: String.fromCharCode(65 + i), label: o.label, badgeStyle: obadge,
+        onLabel: (e) => this.updateOption(q.id, o.id, e.target.value),
+        onRemove: () => this.removeOption(q.id, o.id),
+      }));
+      vals.onAddOption = () => this.addOption(q.id);
+      vals.optInputStyle = { flex: 1, height: "38px", padding: "0 12px", borderRadius: "9px", border: "1px solid " + p.line, background: p.surface, fontSize: "14px", color: p.ink, outline: "none" };
+      vals.titleInputStyle = { width: "100%", marginTop: "6px", padding: "13px 15px", borderRadius: "12px", border: "1px solid " + p.line, background: p.paper, fontFamily: "'Newsreader',serif", fontSize: "18px", color: p.ink, outline: "none" };
+      vals.onDeleteQ = () => this.deleteQ(q.id);
+      vals.onMoveUp = () => this.moveQ(q.id, -1);
+      vals.onMoveDown = () => this.moveQ(q.id, 1);
+    }
+  }
+
+  _renderResults(vals, p, s) {
+    if (s.screen !== "results") return;
+    const f = this.active();
+    if (!f) return;
+    vals.rTitle = f.title;
+    vals.rRespCount = f.responseCount + " respon";
+    vals.onEditFromResults = () => this.goBuilder();
+    vals.onBackDashR = () => this.goDashboard();
+    vals.onDownload = () => this.downloadCsv();
+    vals.resTab = s.resultsTab;
+    vals.isSummaryTab = s.resultsTab === "summary";
+    vals.isResponsesTab = s.resultsTab === "responses";
+    vals.onTabSummary = () => this.setState({ resultsTab: "summary" });
+    vals.onTabResponses = () => this.setState({ resultsTab: "responses" });
+    const tabActive = { padding: "9px 16px", borderRadius: "10px 10px 0 0", background: p.paper, color: p.ink, fontSize: "13.5px", fontWeight: 700, border: "1px solid " + p.line, borderBottom: "none", cursor: "pointer" };
+    const tabIdle = { padding: "9px 16px", background: "none", border: "none", color: p.mute, fontSize: "13.5px", fontWeight: 600, cursor: "pointer" };
+    vals.tabSummaryStyle = s.resultsTab === "summary" ? tabActive : tabIdle;
+    vals.tabResponsesStyle = s.resultsTab === "responses" ? tabActive : tabIdle;
+
+    vals.hasResponses = f.responseCount > 0;
+    vals.noResponses = f.responseCount <= 0;
+    vals.stats = [
+      { label: "Respon", value: String(f.responseCount), valStyle: { fontFamily: "'Newsreader',serif", fontSize: "32px", color: p.ink, margin: "6px 0 0" } },
+      { label: "Penyelesaian", value: f.completion + "%", valStyle: { fontFamily: "'Newsreader',serif", fontSize: "32px", color: p.primary, margin: "6px 0 0" } },
+      { label: "Pertanyaan", value: String(f.questions.length), valStyle: { fontFamily: "'Newsreader',serif", fontSize: "32px", color: p.ink, margin: "6px 0 0" } },
+    ];
+
+    vals.summaryCards = f.questions.map((q) => {
+      const a = (f.analytics || {})[q.id] || {};
+      const card = { title: q.title || this.TYPE_LABEL[q.type], answeredLabel: (a.answered || 0) + " jawaban" };
+      if (a.options) {
+        const max = Math.max(1, ...a.options.map((o) => o.count));
+        card.kind = "bars";
+        card.bars = a.options.map((o, i) => ({
+          label: o.label, count: o.count,
+          barStyle: { height: "100%", width: Math.round((o.count / max) * 100) + "%", background: p.primary, opacity: Math.max(0.4, 1 - i * 0.16), borderRadius: "6px" },
+        }));
+      } else if (a.average !== undefined) {
+        card.kind = "rating"; card.average = a.average.toFixed(1);
+      } else {
+        card.kind = "open"; card.openNote = (a.answered ? "Terbuka — lihat tab Respons." : "Belum ada jawaban.");
+      }
+      return card;
+    });
+
+    vals.responseRows = this.sampleResponses.map((r) => ({ t: r.t, tenure: r.tenure, payroll: r.payroll, nps: String(r.nps), contact: r.contact }));
+  }
+
+  renderVals() {
+    const p = this.pal();
+    const s = this.state;
+    const rootStyle = {
+      minHeight: "100dvh", background: p.paper, color: p.ink, fontFamily: "'Hanken Grotesk',sans-serif",
+      "--primary": p.primary, "--primary-soft": p.primarySoft, "--on-primary": p.onPrimary, "--surface": p.surface,
+      "--ink": p.ink, "--mute": p.mute, "--line": p.line, "--accent": p.accent, "--paper": p.paper, "--ring": p.ring,
+    };
+    const primaryBtnStyle = { height: "44px", padding: "0 18px", border: "none", borderRadius: "12px", background: p.primary, color: p.onPrimary, fontWeight: 700, fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 6px 16px " + p.ring };
+    const ghostBtnStyle = { height: "44px", padding: "0 16px", border: "1px solid " + p.line, borderRadius: "12px", background: p.surface, color: p.ink, fontWeight: 600, fontSize: "14px", cursor: "pointer" };
+    const dangerBtnStyle = { height: "44px", padding: "0 18px", border: "none", borderRadius: "12px", background: "#c2483b", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" };
+    const inputStyle = { width: "100%", marginTop: "6px", height: "46px", padding: "0 14px", borderRadius: "12px", border: "1px solid " + p.line, background: p.surface, fontSize: "15px", color: p.ink, outline: "none" };
+    const overlayStyle = { position: "fixed", inset: 0, background: "rgba(20,28,26,.42)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", zIndex: 50 };
+    const dialogStyle = { width: "100%", maxWidth: "440px", background: p.surface, borderRadius: "20px", padding: "26px", boxShadow: "0 24px 60px rgba(20,28,26,.3)" };
+
+    const vals = {
+      rootStyle, primaryBtnStyle, ghostBtnStyle, dangerBtnStyle, inputStyle, overlayStyle, dialogStyle,
+      stop: (e) => e.stopPropagation(),
+      isDashboard: s.screen === "dashboard", isBuilder: s.screen === "builder", isResults: s.screen === "results",
+      isTemplates: s.screen === "templates",
+    };
+    vals.onNavSurveys = () => this.goDashboard();
+    vals.onNavTemplates = () => this.goTemplates();
+    vals.onLogout = () => { window.location.href = encodeURI("txsurvey Login.dc.html"); };
+    vals.templateCards = this.TEMPLATES.map((t) => {
+      const tp = this.PALETTES[t.theme] || p;
+      const types = [...new Set(t.questions.map((q) => this.TYPE_LABEL[q.type] || q.type))];
+      return {
+        title: t.title, desc: t.desc,
+        metaLabel: t.questions.length + " pertanyaan · ±" + t.minutes + " menit",
+        iconStyle: { width: "46px", height: "46px", borderRadius: "13px", background: tp.primary, display: "flex", alignItems: "center", justifyContent: "center" },
+        iconInner: { width: "18px", height: "18px", borderRadius: "6px", border: "3px solid " + tp.onPrimary, borderTopColor: tp.accent, transform: "rotate(45deg)" },
+        chips: types.map((l) => ({ label: l, style: { padding: "4px 10px", borderRadius: "20px", background: p.paper, border: "1px solid " + p.line, fontSize: "11.5px", color: p.mute, fontWeight: 600 } })),
+        useStyle: { height: "36px", padding: "0 15px", border: "none", borderRadius: "10px", background: p.primary, color: p.onPrimary, fontWeight: 700, fontSize: "13px", cursor: "pointer" },
+        onUse: () => this.useTemplate(t),
+      };
+    });
+
+    // ---------- DASHBOARD ----------
+    if (s.screen === "dashboard") {
+      const totalResp = s.forms.reduce((a, f) => a + f.responseCount, 0);
+      vals.dashSubtitle = s.forms.length + " survei · " + totalResp + " total respon";
+      vals.onNew = () => this.openNew();
+      const statusMap = {
+        published: { label: "● Published", style: { padding: "4px 10px", borderRadius: "20px", background: p.primarySoft, color: p.primary, fontSize: "11.5px", fontWeight: 700, whiteSpace: "nowrap" } },
+        draft: { label: "Draft", style: { padding: "4px 10px", borderRadius: "20px", background: "rgba(0,0,0,.05)", color: p.mute, fontSize: "11.5px", fontWeight: 700, whiteSpace: "nowrap" } },
+        closed: { label: "Closed", style: { padding: "4px 10px", borderRadius: "20px", background: "rgba(0,0,0,.04)", color: p.accent, fontSize: "11.5px", fontWeight: 700, whiteSpace: "nowrap" } },
+      };
+      vals.formCards = s.forms.map((f) => {
+        const cardBase = { background: f.status === "draft" ? p.paper : p.surface, border: (f.status === "draft" ? "1px dashed " : "1px solid ") + p.line, borderRadius: "16px", padding: "20px", cursor: "pointer", transition: "transform .15s, box-shadow .15s" };
+        return {
+          title: f.title, meta: f.status === "draft" ? f.questions.length + " pertanyaan · belum dipublikasikan" : f.questions.length + " pertanyaan · " + f.responseCount + " respon",
+          statusLabel: statusMap[f.status].label, statusStyle: statusMap[f.status].style,
+          cardStyle: cardBase,
+          onOpen: () => this.openForm(f.id),
+          onDelete: (e) => { e.stopPropagation(); this.askDelete(f.id); },
+          onEnter: (e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 26px rgba(20,28,26,.1)"; },
+          onLeave: (e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "none"; },
+          onTrashEnter: (e) => { e.currentTarget.style.background = "rgba(194,72,59,.1)"; e.currentTarget.style.color = "#c2483b"; },
+          onTrashLeave: (e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = p.mute; },
+          trend: f.trend.map((h) => ({ style: { flex: 1, height: h + "%", background: p.primary, opacity: Math.max(0.28, h / 100), borderRadius: "3px" } })),
+        };
+      });
+      vals.newOpen = s.newOpen; vals.newTitle = s.newTitle;
+      vals.onCloseNew = () => this.closeNew();
+      vals.onNewTitle = (e) => this.setState({ newTitle: e.target.value });
+      vals.onNewKey = (e) => { if (e.key === "Enter") this.createSurvey(); };
+      vals.onCreate = () => this.createSurvey();
+      vals.deleteOpen = !!s.deleteId;
+      const dt = s.forms.find((f) => f.id === s.deleteId);
+      vals.deleteMsg = dt ? "“" + dt.title + "” dan " + dt.responseCount + " respon-nya akan dihapus permanen." : "";
+      vals.onCancelDelete = () => this.cancelDelete();
+      vals.onConfirmDelete = () => this.confirmDelete();
+    }
+
+    this._renderBuilder && this._renderBuilder(vals, p, s);
+    this._renderResults && this._renderResults(vals, p, s);
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

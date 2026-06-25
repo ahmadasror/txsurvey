@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+  @keyframes floaty { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-9px) } }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+  <!-- LEFT — UVP -->
+  <div style="flex:1.1 1 420px; min-height:100dvh; background:var(--primary); position:relative; overflow:hidden; display:flex; flex-direction:column; padding:48px 52px;">
+    <span style="position:absolute; top:90px; right:70px; width:18px; height:18px; border-radius:6px; background:var(--accent); transform:rotate(18deg); animation:floaty 5s ease-in-out infinite;"></span>
+    <span style="position:absolute; bottom:140px; right:120px; width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,.5); animation:floaty 6s ease-in-out infinite;"></span>
+    <span style="position:absolute; top:-60px; left:-60px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.06);"></span>
+    <span style="position:absolute; bottom:-80px; right:-40px; width:260px; height:260px; border-radius:50%; background:rgba(255,255,255,.05);"></span>
+
+    <div style="display:flex; align-items:center; gap:11px; position:relative;">
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center;"><span style="width:14px; height:14px; border-radius:5px; border:3px solid #fff; border-top-color:var(--accent); transform:rotate(45deg);"></span></div>
+      <span style="font-weight:800; font-size:19px; color:#fff; letter-spacing:-.01em;">txsurvey</span>
+    </div>
+
+    <div style="margin-top:auto; margin-bottom:auto; padding:40px 0; position:relative;">
+      <div style="font-size:12px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:18px;">Form gaya percakapan</div>
+      <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:46px; line-height:1.08; color:#fff; margin:0; max-width:13ch; letter-spacing:-.01em;">Bikin survei yang benar-benar diisi orang.</h1>
+      <p style="font-size:16.5px; line-height:1.6; color:rgba(255,255,255,.82); margin:20px 0 0; max-width:42ch;">Satu pertanyaan per layar, logika bercabang, hasil real-time. Buat, bagikan link, baca jawaban — tanpa ribet.</p>
+
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:16px;">
+        <sc-for list="{{ points }}" as="pt" hint-placeholder-count="4">
+          <div style="display:flex; align-items:flex-start; gap:13px;">
+            <span style="margin-top:2px; width:24px; height:24px; border-radius:8px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="display:block; width:11px; height:6px; border-left:2.5px solid #fff; border-bottom:2.5px solid #fff; transform:rotate(-45deg); margin-top:-2px;"></span></span>
+            <span style="font-size:15.5px; line-height:1.45; color:rgba(255,255,255,.92);">{{ pt }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{ proof }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex; align-items:center; gap:13px; position:relative;">
+        <div style="display:flex;">
+          <span style="width:32px; height:32px; border-radius:50%; background:var(--accent); border:2px solid var(--primary); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">R</span>
+          <span style="width:32px; height:32px; border-radius:50%; background:#fff; border:2px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-left:-10px;">A</span>
+          <span style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.22); border:2px solid var(--primary); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-left:-10px;">+6</span>
+        </div>
+        <span style="font-size:13.5px; color:rgba(255,255,255,.8);">Dipakai tim People &amp; Ops</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- RIGHT — sign in -->
+  <div style="flex:.9 1 380px; min-height:100dvh; background:var(--paper); display:flex; align-items:center; justify-content:center; padding:40px 28px;">
+    <div style="width:100%; max-width:380px;">
+      <div style="width:52px; height:52px; border-radius:15px; background:var(--primary); display:flex; align-items:center; justify-content:center; margin-bottom:24px;"><span style="width:20px; height:20px; border-radius:7px; border:3px solid var(--paper); border-top-color:var(--accent); transform:rotate(45deg);"></span></div>
+      <h2 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; color:var(--ink); margin:0;">Masuk ke txsurvey</h2>
+      <p style="font-size:15px; color:var(--mute); margin:10px 0 28px; line-height:1.5;">Kelola survei dan lihat hasilnya. Masuk pakai akun Google kerjamu.</p>
+
+      <button style="{{ googleBtnStyle }}" onClick="{{ onSignIn }}" onMouseEnter="{{ onBtnEnter }}" onMouseLeave="{{ onBtnLeave }}">
+        <sc-if value="{{ signingIn }}" hint-placeholder-val="{{ false }}">
+          <span style="width:20px; height:20px; border:2.5px solid var(--line); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite;"></span>
+          <span>Menghubungkan…</span>
+        </sc-if>
+        <sc-if value="{{ idle }}" hint-placeholder-val="{{ true }}">
+          <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+          <span>Lanjut dengan Google</span>
+        </sc-if>
+      </button>
+
+      <div style="display:flex; align-items:center; gap:12px; margin:22px 0;">
+        <span style="flex:1; height:1px; background:var(--line);"></span>
+        <span style="font-size:12px; color:var(--mute);">akun yang diundang</span>
+        <span style="flex:1; height:1px; background:var(--line);"></span>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:10px; padding:13px 14px; border-radius:12px; background:var(--primary-soft);">
+        <span style="margin-top:1px; font-size:13px; color:var(--primary); font-weight:700;">ⓘ</span>
+        <p style="font-size:12.5px; line-height:1.5; color:var(--ink); margin:0; opacity:.85;">Aplikasi dalam mode uji — hanya email yang ditambahkan tim sebagai test user yang bisa masuk. Belum diundang? Hubungi admin.</p>
+      </div>
+
+      <p style="font-size:12px; color:var(--mute); margin:24px 0 0; line-height:1.5;">Dengan masuk, kamu setuju pada <a href="txsurvey Legal.dc.html" style="color:var(--ink); text-decoration:underline; cursor:pointer;">Ketentuan</a> &amp; <a href="txsurvey Legal.dc.html" style="color:var(--ink); text-decoration:underline; cursor:pointer;">Kebijakan Privasi</a>.</p>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Pine&quot;,&quot;Sand&quot;,&quot;Grape&quot;,&quot;Coral&quot;,&quot;Ink&quot;],&quot;default&quot;:&quot;Pine&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;proof&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { signingIn: false };
+  PALETTES = {
+    Pine:  { paper:"#F4F1EA", surface:"#ffffff", ink:"#1d2624", mute:"#6b736e", line:"#e3ddd0", primary:"#2f6f5e", primarySoft:"#e7efe9", onPrimary:"#ffffff", accent:"#d98e5a" },
+    Sand:  { paper:"#FBF6EC", surface:"#ffffff", ink:"#2B2317", mute:"#8a795a", line:"#e9ddc6", primary:"#C2772E", primarySoft:"#f6ead5", onPrimary:"#ffffff", accent:"#6B8F71" },
+    Grape: { paper:"#F7F4FF", surface:"#ffffff", ink:"#1A1530", mute:"#7a7393", line:"#e3dcf7", primary:"#6C4CE0", primarySoft:"#ece6fc", onPrimary:"#ffffff", accent:"#FF6B5C" },
+    Coral: { paper:"#FFF4F0", surface:"#ffffff", ink:"#2A1A16", mute:"#9a7a70", line:"#f3d8cf", primary:"#E5533D", primarySoft:"#fbe2db", onPrimary:"#ffffff", accent:"#2BB3A3" },
+    Ink:   { paper:"#F3F4F6", surface:"#ffffff", ink:"#11141B", mute:"#6b7280", line:"#dfe2e7", primary:"#1F2430", primarySoft:"#e6e8ec", onPrimary:"#ffffff", accent:"#6C4CE0" },
+  };
+  pal() { return this.PALETTES[this.props.theme] || this.PALETTES.Pine; }
+
+  signIn() {
+    if (this.state.signingIn) return;
+    this.setState({ signingIn: true });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => { window.location.href = encodeURI("txsurvey Studio.dc.html"); }, 1200);
+  }
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  renderVals() {
+    const p = this.pal();
+    return {
+      rootStyle: {
+        minHeight: "100dvh", display: "flex", flexWrap: "wrap", fontFamily: "'Hanken Grotesk',sans-serif",
+        "--primary": p.primary, "--primary-soft": p.primarySoft, "--on-primary": p.onPrimary,
+        "--paper": p.paper, "--surface": p.surface, "--ink": p.ink, "--mute": p.mute, "--line": p.line, "--accent": p.accent,
+      },
+      proof: this.props.proof !== false,
+      points: [
+        "Satu pertanyaan per layar — terasa ringan, rampung lebih cepat",
+        "Logika bercabang: tiap responden lihat jalur yang relevan",
+        "Analitik real-time plus ekspor CSV sekali klik",
+        "Satu link, mulus di HP maupun desktop",
+      ],
+      signingIn: this.state.signingIn,
+      idle: !this.state.signingIn,
+      onSignIn: () => this.signIn(),
+      googleBtnStyle: {
+        width: "100%", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", gap: "11px",
+        border: "1px solid " + p.line, borderRadius: "13px", background: p.surface, color: p.ink,
+        fontSize: "15px", fontWeight: 600, cursor: "pointer", transition: "box-shadow .15s, transform .15s, border-color .15s",
+      },
+      onBtnEnter: (e) => { e.currentTarget.style.boxShadow = "0 6px 18px rgba(20,28,26,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.borderColor = p.mute; },
+      onBtnLeave: (e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; e.currentTarget.style.borderColor = p.line; },
+    };
+  }
+}
+</script>
+</body>
+</html>

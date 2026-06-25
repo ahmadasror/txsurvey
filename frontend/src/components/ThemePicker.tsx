@@ -1,8 +1,7 @@
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { THEME_PRESETS } from "@/lib/themes";
 
-/** ThemePicker shows the five preset themes as selectable swatch cards.
+/** ThemePicker shows the five Soft Studio themes as selectable swatch cards.
  *  onPreview fires on hover/focus (and null on leave) so callers can show a
  *  live preview of the hovered theme. */
 export function ThemePicker({
@@ -15,7 +14,7 @@ export function ThemePicker({
   onPreview?: (id: string | null) => void;
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+    <div className="grid grid-cols-5 gap-2">
       {THEME_PRESETS.map((p) => {
         const selected = value === p.id;
         return (
@@ -29,18 +28,17 @@ export function ThemePicker({
             onBlur={() => onPreview?.(null)}
             aria-pressed={selected}
             className={cn(
-              "relative flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-              selected ? "border-primary ring-2 ring-primary/40" : "hover:bg-accent",
+              "flex flex-col items-center gap-2 rounded-xl border-2 p-2.5 text-xs transition-all",
+              selected ? "border-primary" : "border-border hover:border-primary/40",
             )}
           >
-            {selected && (
-              <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Check className="size-3" />
-              </span>
-            )}
-            <span className="size-8 rounded-full shadow-inner" style={{ background: p.swatch }} />
-            <span className="text-base leading-none">{p.emoji}</span>
-            <span className="font-medium">{p.label}</span>
+            <span
+              className="flex size-9 items-center justify-center rounded-full"
+              style={{ background: p.swatch }}
+            >
+              <span className="size-3 rounded-full" style={{ background: p.accentSwatch }} />
+            </span>
+            <span className="font-medium text-foreground">{p.label}</span>
           </button>
         );
       })}

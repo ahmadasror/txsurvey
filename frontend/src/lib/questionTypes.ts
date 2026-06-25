@@ -12,35 +12,35 @@ export interface QuestionTypeDef {
 }
 
 export const QUESTION_TYPES: QuestionTypeDef[] = [
-  { type: "short_text", label: "Short text", defaultMetadata: {}, isChoice: false, isStatement: false },
-  { type: "long_text", label: "Long text", defaultMetadata: {}, isChoice: false, isStatement: false },
+  { type: "short_text", label: "Teks singkat", defaultMetadata: {}, isChoice: false, isStatement: false },
+  { type: "long_text", label: "Teks panjang", defaultMetadata: {}, isChoice: false, isStatement: false },
   { type: "email", label: "Email", defaultMetadata: {}, isChoice: false, isStatement: false },
-  { type: "number", label: "Number", defaultMetadata: {}, isChoice: false, isStatement: false },
-  { type: "date", label: "Date", defaultMetadata: {}, isChoice: false, isStatement: false },
+  { type: "number", label: "Angka", defaultMetadata: {}, isChoice: false, isStatement: false },
+  { type: "date", label: "Tanggal", defaultMetadata: {}, isChoice: false, isStatement: false },
   {
     type: "multiple_choice",
-    label: "Multiple choice",
-    defaultMetadata: { options: [{ id: "", label: "Option 1" }] },
+    label: "Pilihan ganda",
+    defaultMetadata: { options: [{ id: "", label: "Pilihan 1" }] },
     isChoice: true,
     isStatement: false,
   },
   {
     type: "checkboxes",
-    label: "Checkboxes",
-    defaultMetadata: { options: [{ id: "", label: "Option 1" }] },
+    label: "Kotak centang",
+    defaultMetadata: { options: [{ id: "", label: "Pilihan 1" }] },
     isChoice: true,
     isStatement: false,
   },
   {
     type: "dropdown",
     label: "Dropdown",
-    defaultMetadata: { options: [{ id: "", label: "Option 1" }] },
+    defaultMetadata: { options: [{ id: "", label: "Pilihan 1" }] },
     isChoice: true,
     isStatement: false,
   },
   { type: "rating", label: "Rating", defaultMetadata: { scale: 5 }, isChoice: false, isStatement: false },
-  { type: "yes_no", label: "Yes / No", defaultMetadata: {}, isChoice: false, isStatement: false },
-  { type: "statement", label: "Statement", defaultMetadata: {}, isChoice: false, isStatement: true },
+  { type: "yes_no", label: "Ya / Tidak", defaultMetadata: {}, isChoice: false, isStatement: false },
+  { type: "statement", label: "Pernyataan", defaultMetadata: {}, isChoice: false, isStatement: true },
 ];
 
 export const typeDef = (t: QuestionType): QuestionTypeDef =>

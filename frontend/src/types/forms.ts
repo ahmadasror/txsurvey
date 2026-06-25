@@ -93,6 +93,8 @@ export interface FormSettings {
   logo_url?: string;
   show_progress: boolean;
   theme: ThemeSettings;
+  /** Per-form display font (Soft Studio): editorial | modern | soft | serif. */
+  font?: string;
 }
 
 export interface Form {

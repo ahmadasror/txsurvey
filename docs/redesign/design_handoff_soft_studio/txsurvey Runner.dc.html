@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+  textarea { font-family: inherit; }
+  @keyframes floaty { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-7px) } }
+  @keyframes pop-in { 0%{ transform: scale(.8); opacity:0 } 60%{ transform: scale(1.06) } 100%{ transform: scale(1); opacity:1 } }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+  <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ progressTrackStyle }}"><div style="{{ progressFillStyle }}"></div></div>
+  </sc-if>
+
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+    <div style="width:100%; max-width:600px;">
+
+      <!-- WELCOME -->
+      <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+        <div style="text-align:center;">
+          <div style="margin:0 auto 26px; width:62px; height:62px; border-radius:18px; background:var(--primary); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px var(--ring);">
+            <span style="display:block; width:24px; height:24px; border-radius:8px; border:3px solid var(--paper); border-top-color:var(--accent); transform:rotate(45deg);"></span>
+          </div>
+          <div style="font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--primary); margin-bottom:14px;">Survei Internal</div>
+          <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:42px; line-height:1.1; letter-spacing:-.01em; color:var(--ink); margin:0;">{{ welcomeTitle }}</h1>
+          <p style="font-size:17px; line-height:1.55; color:var(--mute); margin:18px 0 0;">{{ welcomeDesc }}</p>
+          <button style="{{ startBtnStyle }}" onClick="{{ onStart }}" onMouseEnter="{{ btnEnter }}" onMouseLeave="{{ btnLeave }}">{{ startLabel }} <span style="font-size:18px;">→</span></button>
+          <div style="margin-top:18px; font-size:13px; color:var(--mute); opacity:.8;">5 pertanyaan · ±2 menit · anonim</div>
+        </div>
+      </sc-if>
+
+      <!-- QUESTION -->
+      <sc-if value="{{ isQuestion }}" hint-placeholder-val="{{ false }}">
+        <div ref="{{ qRef }}">
+          <div style="display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; color:var(--primary); margin-bottom:18px;">
+            <span style="font-size:16px;">{{ qNum }}</span><span style="color:var(--line);">→</span><span style="color:var(--mute); font-weight:500;">dari {{ qTotal }}</span>
+          </div>
+          <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:32px; line-height:1.18; color:var(--ink); margin:0;">{{ qTitle }}</h1>
+          <sc-if value="{{ qDesc }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:15.5px; color:var(--mute); margin:12px 0 0;">{{ qDesc }}</p>
+          </sc-if>
+
+          <div style="margin-top:28px;">
+            <sc-if value="{{ isChoice }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; gap:11px;">
+                <sc-for list="{{ options }}" as="opt" hint-placeholder-count="4">
+                  <button style="{{ opt.rowStyle }}" onClick="{{ opt.onClick }}">
+                    <span style="{{ opt.badgeStyle }}">{{ opt.letter }}</span>
+                    <span style="flex:1;">{{ opt.label }}</span>
+                    <sc-if value="{{ opt.selected }}" hint-placeholder-val="{{ false }}"><span style="{{ opt.checkStyle }}">✓</span></sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isRating }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                <sc-for list="{{ ratingButtons }}" as="rb" hint-placeholder-count="10">
+                  <button style="{{ rb.style }}" onClick="{{ rb.onClick }}">{{ rb.n }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isText }}" hint-placeholder-val="{{ false }}">
+              <textarea style="{{ textareaStyle }}" placeholder="{{ placeholder }}" value="{{ textValue }}" onChange="{{ onText }}"></textarea>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ error }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:14px 0 0; font-size:14px; color:#c2483b;">{{ error }}</p>
+          </sc-if>
+
+          <div style="margin-top:30px; display:flex; align-items:center; gap:14px;">
+            <button style="{{ nextBtnStyle }}" onClick="{{ onNext }}" onMouseEnter="{{ btnEnter }}" onMouseLeave="{{ btnLeave }}">{{ nextLabel }} <span style="font-size:16px;">→</span></button>
+            <span style="font-size:12.5px; color:var(--mute); opacity:.8;">tekan Enter ↵</span>
+            <button style="margin-left:auto; background:none; border:none; font-size:14px; font-weight:500; color:var(--mute); cursor:pointer; padding:8px;" onClick="{{ onBack }}">← Kembali</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- DONE -->
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center; position:relative;">
+          <span style="position:absolute; top:-10px; left:14%; width:12px; height:12px; border-radius:4px; background:var(--accent); animation:floaty 4s ease-in-out infinite;"></span>
+          <span style="position:absolute; top:30px; right:16%; width:9px; height:9px; border-radius:50%; background:var(--primary); animation:floaty 5s ease-in-out infinite;"></span>
+          <div style="margin:0 auto 26px; width:84px; height:84px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; animation:pop-in .5s ease-out both;">
+            <span style="display:block; width:36px; height:19px; border-left:4px solid var(--on-primary); border-bottom:4px solid var(--on-primary); transform:rotate(-45deg); margin-top:-6px;"></span>
+          </div>
+          <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:38px; line-height:1.12; color:var(--ink); margin:0;">Makasih, sudah terkirim!</h1>
+          <p style="font-size:17px; line-height:1.55; color:var(--mute); margin:16px 0 0;">Jawabanmu masuk anonim dan langsung membantu tim HR. Sampai jumpa di pulse berikutnya.</p>
+          <button style="margin-top:28px; background:none; border:1.5px solid var(--line); border-radius:13px; padding:11px 18px; font-size:14px; font-weight:600; color:var(--ink); cursor:pointer;" onClick="{{ onRestart }}">↺ Isi lagi dari awal</button>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:760},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Pine&quot;,&quot;Sand&quot;,&quot;Grape&quot;,&quot;Coral&quot;,&quot;Ink&quot;],&quot;default&quot;:&quot;Pine&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showProgressBar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;autoAdvance&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  qRef = React.createRef();
+  state = { phase: "welcome", idx: 0, answers: {}, error: "" };
+
+  QUESTIONS = [
+    { id: "tenure", type: "choice", required: true,
+      title: "Sudah berapa lama kamu bergabung dengan tim?",
+      options: [
+        { id: "a", label: "Kurang dari 3 bulan" },
+        { id: "b", label: "3–12 bulan" },
+        { id: "c", label: "1–3 tahun" },
+        { id: "d", label: "Lebih dari 3 tahun" },
+      ] },
+    { id: "payroll", type: "choice", required: true,
+      title: "Seberapa puas kamu dengan proses payroll bulan ini?",
+      options: [
+        { id: "a", label: "Sangat puas" },
+        { id: "b", label: "Cukup puas" },
+        { id: "c", label: "Biasa saja" },
+        { id: "d", label: "Kurang puas" },
+      ] },
+    { id: "nps", type: "rating", required: true, scale: 10,
+      title: "Seberapa mungkin kamu merekomendasikan tempat kerja ini ke teman?",
+      description: "1 = nggak banget · 10 = wajib banget" },
+    { id: "improve", type: "long", required: false,
+      title: "Apa satu hal yang paling bisa kami perbaiki?",
+      description: "Opsional — tapi masukanmu sangat berarti.",
+      placeholder: "Tulis jawabanmu di sini…" },
+    { id: "contact", type: "yes_no", required: true,
+      title: "Boleh tim HR menghubungimu untuk menindaklanjuti?" },
+  ];
+
+  PALETTES = {
+    Pine:  { paper:"#F4F1EA", surface:"#ffffff", ink:"#1d2624", mute:"#6b736e", line:"#e3ddd0", primary:"#2f6f5e", primarySoft:"#e7efe9", onPrimary:"#ffffff", accent:"#d98e5a", ring:"rgba(47,111,94,.16)" },
+    Sand:  { paper:"#FBF6EC", surface:"#ffffff", ink:"#2B2317", mute:"#8a795a", line:"#e9ddc6", primary:"#C2772E", primarySoft:"#f6ead5", onPrimary:"#ffffff", accent:"#6B8F71", ring:"rgba(194,119,46,.16)" },
+    Grape: { paper:"#F7F4FF", surface:"#ffffff", ink:"#1A1530", mute:"#7a7393", line:"#e3dcf7", primary:"#6C4CE0", primarySoft:"#ece6fc", onPrimary:"#ffffff", accent:"#FF6B5C", ring:"rgba(108,76,224,.16)" },
+    Coral: { paper:"#FFF4F0", surface:"#ffffff", ink:"#2A1A16", mute:"#9a7a70", line:"#f3d8cf", primary:"#E5533D", primarySoft:"#fbe2db", onPrimary:"#ffffff", accent:"#2BB3A3", ring:"rgba(229,83,61,.16)" },
+    Ink:   { paper:"#F3F4F6", surface:"#ffffff", ink:"#11141B", mute:"#6b7280", line:"#dfe2e7", primary:"#1F2430", primarySoft:"#e6e8ec", onPrimary:"#ffffff", accent:"#6C4CE0", ring:"rgba(31,36,48,.14)" },
+  };
+
+  pal() { return this.PALETTES[this.props.theme] || this.PALETTES.Pine; }
+  current() { return this.QUESTIONS[this.state.idx]; }
+  isEmpty(v) { return v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0); }
+
+  componentDidMount() {
+    this._onKey = (e) => this.handleKey(e);
+    window.addEventListener("keydown", this._onKey);
+  }
+  componentWillUnmount() {
+    window.removeEventListener("keydown", this._onKey);
+    clearTimeout(this._t);
+  }
+  componentDidUpdate(pp, ps) {
+    if (this.state.phase === "question" && this.qRef.current &&
+        (ps.idx !== this.state.idx || ps.phase !== this.state.phase)) {
+      this.qRef.current.animate(
+        [{ opacity: 0, transform: "translateY(22px)" }, { opacity: 1, transform: "translateY(0)" }],
+        { duration: 300, easing: "cubic-bezier(.2,.7,.3,1)" },
+      );
+    }
+  }
+
+  start() { this.setState({ phase: "question", idx: 0, error: "" }); }
+  onRestart() { this.setState({ phase: "welcome", idx: 0, answers: {}, error: "" }); }
+  setAnswer(id, val) { this.setState((s) => ({ answers: { ...s.answers, [id]: val }, error: "" })); }
+  pick(id, val) {
+    this.setAnswer(id, val);
+    if (this.props.autoAdvance !== false) {
+      clearTimeout(this._t);
+      this._t = setTimeout(() => this.next(), 170);
+    }
+  }
+  next() {
+    const q = this.current();
+    if (!q) return;
+    if (q.required && this.isEmpty(this.state.answers[q.id])) {
+      this.setState({ error: "Pertanyaan ini wajib diisi." });
+      return;
+    }
+    if (this.state.idx >= this.QUESTIONS.length - 1) this.setState({ phase: "done" });
+    else this.setState((s) => ({ idx: s.idx + 1, error: "" }));
+  }
+  back() {
+    if (this.state.idx <= 0) this.setState({ phase: "welcome", error: "" });
+    else this.setState((s) => ({ idx: s.idx - 1, error: "" }));
+  }
+  handleKey(e) {
+    if (this.state.phase === "welcome") { if (e.key === "Enter") this.start(); return; }
+    if (this.state.phase !== "question") return;
+    const el = document.activeElement;
+    const inText = el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT");
+    if (e.key === "Enter") {
+      if (el && el.tagName === "TEXTAREA") return;
+      e.preventDefault(); this.next(); return;
+    }
+    if (!inText && /^[1-9]$/.test(e.key)) {
+      const q = this.current(); const i = Number(e.key) - 1;
+      if (q.type === "choice") { const o = q.options[i]; if (o) this.pick(q.id, o.id); }
+      else if (q.type === "rating") { if (i + 1 <= q.scale) this.pick(q.id, i + 1); }
+      else if (q.type === "yes_no") { if (i < 2) this.pick(q.id, i === 0); }
+    }
+  }
+
+  renderVals() {
+    const p = this.pal();
+    const { phase, idx, answers, error } = this.state;
+    const q = this.current();
+    const total = this.QUESTIONS.length;
+
+    const rootStyle = {
+      minHeight: "100dvh", display: "flex", flexDirection: "column",
+      background: p.paper, color: p.ink, fontFamily: "'Hanken Grotesk',sans-serif",
+      "--primary": p.primary, "--primary-soft": p.primarySoft, "--on-primary": p.onPrimary,
+      "--ink": p.ink, "--mute": p.mute, "--line": p.line, "--accent": p.accent,
+      "--paper": p.paper, "--ring": p.ring,
+    };
+
+    const btnEnter = (e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 26px " + p.ring; };
+    const btnLeave = (e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 8px 20px " + p.ring; };
+    const cta = {
+      marginTop: "30px", height: "54px", padding: "0 26px", border: "none", borderRadius: "16px",
+      background: p.primary, color: p.onPrimary, fontFamily: "'Hanken Grotesk',sans-serif",
+      fontWeight: 700, fontSize: "16px", display: "inline-flex", alignItems: "center", gap: "10px",
+      cursor: "pointer", boxShadow: "0 8px 20px " + p.ring, transition: "transform .15s, box-shadow .15s",
+    };
+
+    // progress
+    const pct = Math.max(8, Math.round(((idx) / total) * 100));
+    const vals = {
+      rootStyle,
+      showProgress: this.props.showProgressBar !== false && phase === "question",
+      progressTrackStyle: { height: "6px", width: "100%", background: p.line },
+      progressFillStyle: { height: "100%", width: pct + "%", background: p.primary, transition: "width .4s ease" },
+      isWelcome: phase === "welcome", isQuestion: phase === "question", isDone: phase === "done",
+      welcomeTitle: "Apa kabar pengalaman kerjamu sejauh ini?",
+      welcomeDesc: "Lima pertanyaan singkat soal pengalaman kerjamu. Jujur aja — jawabannya anonim.",
+      startLabel: "Mulai", onStart: () => this.start(),
+      startBtnStyle: cta, nextBtnStyle: { ...cta, marginTop: 0, height: "48px" },
+      btnEnter, btnLeave,
+      qRef: this.qRef,
+      onBack: () => this.back(), onRestart: () => this.onRestart(),
+      error,
+    };
+
+    if (phase === "question" && q) {
+      vals.qNum = String(idx + 1).padStart(2, "0");
+      vals.qTotal = total;
+      vals.qTitle = q.title;
+      vals.qDesc = q.description || "";
+      vals.isChoice = q.type === "choice" || q.type === "yes_no";
+      vals.isRating = q.type === "rating";
+      vals.isText = q.type === "long";
+      vals.isLast = idx === total - 1;
+      vals.nextLabel = vals.isLast ? "Kirim" : "OK";
+      vals.onNext = () => this.next();
+
+      const baseRow = {
+        display: "flex", alignItems: "center", gap: "13px", width: "100%", padding: "15px 16px",
+        borderRadius: "15px", textAlign: "left", fontSize: "16px", fontWeight: 500, color: p.ink,
+        fontFamily: "'Hanken Grotesk',sans-serif", cursor: "pointer", transition: "border-color .15s, background .15s",
+      };
+      const baseBadge = {
+        display: "flex", alignItems: "center", justifyContent: "center", width: "27px", height: "27px",
+        borderRadius: "8px", fontWeight: 700, fontSize: "13px", flexShrink: 0,
+      };
+
+      if (vals.isChoice) {
+        const src = q.type === "yes_no"
+          ? [{ id: true, label: "Ya, boleh" }, { id: false, label: "Tidak, terima kasih" }]
+          : q.options;
+        vals.options = src.map((o, i) => {
+          const selected = answers[q.id] === o.id;
+          return {
+            label: o.label,
+            letter: String.fromCharCode(65 + i),
+            selected,
+            onClick: () => this.pick(q.id, o.id),
+            rowStyle: selected
+              ? { ...baseRow, border: "1.5px solid " + p.primary, background: p.primarySoft, boxShadow: "0 0 0 3px " + p.ring }
+              : { ...baseRow, border: "1.5px solid " + p.line, background: p.surface },
+            badgeStyle: selected
+              ? { ...baseBadge, border: "1.5px solid " + p.primary, color: p.primary }
+              : { ...baseBadge, border: "1.5px solid " + p.line, color: p.mute },
+            checkStyle: { color: p.primary, fontWeight: 700, fontSize: "16px" },
+          };
+        });
+      }
+
+      if (vals.isRating) {
+        const baseBtn = {
+          width: "54px", height: "54px", borderRadius: "13px", fontSize: "17px", fontWeight: 600,
+          fontFamily: "'Hanken Grotesk',sans-serif", cursor: "pointer", transition: "all .12s",
+        };
+        vals.ratingButtons = Array.from({ length: q.scale }, (_, i) => i + 1).map((n) => {
+          const selected = answers[q.id] === n;
+          return {
+            n,
+            onClick: () => this.pick(q.id, n),
+            style: selected
+              ? { ...baseBtn, border: "1.5px solid " + p.primary, background: p.primary, color: p.onPrimary, boxShadow: "0 0 0 3px " + p.ring }
+              : { ...baseBtn, border: "1.5px solid " + p.line, background: p.surface, color: p.ink },
+          };
+        });
+      }
+
+      if (vals.isText) {
+        vals.placeholder = q.placeholder || "Tulis jawabanmu…";
+        vals.textValue = (answers[q.id] || "");
+        vals.onText = (e) => this.setAnswer(q.id, e.target.value);
+        vals.textareaStyle = {
+          width: "100%", minHeight: "140px", padding: "15px 16px", borderRadius: "14px",
+          border: "1.5px solid " + p.line, background: p.surface, fontSize: "17px", color: p.ink,
+          fontFamily: "'Hanken Grotesk',sans-serif", resize: "vertical", outline: "none", lineHeight: 1.5,
+        };
+      }
+    }
+
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

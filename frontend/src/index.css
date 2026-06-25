@@ -2,31 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-/* shadcn/ui design tokens (slate base). Override --primary / --ring on a
-   container to apply a per-form accent color in the runner. */
+/* Soft Studio design tokens. Default theme = Pine (teal-on-cream). Override the
+   variables on a container (see lib/themes.ts → themeStyle) to apply a per-form
+   theme + display font in the runner / builder / results. */
 @layer base {
-  /* Default theme = txhcs: teal (#2a7f7f) on warm cream (#f8f6f3). */
   :root {
-    --background: 30 15% 97%;
-    --foreground: 200 20% 14%;
+    /* Type system: Hanken Grotesk (UI/body) + a swappable display family. */
+    --font-ui: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Newsreader", ui-serif, Georgia, serif;
+
+    /* Pine palette (default). */
+    --background: 42 31% 94%;
+    --foreground: 167 13% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 200 20% 14%;
+    --card-foreground: 167 13% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 200 20% 14%;
-    --primary: 180 50% 33%;
+    --popover-foreground: 167 13% 13%;
+    --primary: 164 41% 31%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 15% 94%;
-    --secondary-foreground: 180 30% 22%;
-    --muted: 30 15% 94%;
-    --muted-foreground: 200 12% 42%;
-    --accent: 180 40% 92%;
-    --accent-foreground: 180 50% 22%;
-    --destructive: 0 84% 60%;
+    --primary-soft: 135 20% 92%;
+    --secondary: 135 20% 92%;
+    --secondary-foreground: 164 41% 31%;
+    --muted: 41 25% 85%;
+    --muted-foreground: 143 4% 44%;
+    --accent: 135 20% 92%;
+    --accent-foreground: 164 41% 31%;
+    --brand-accent: 25 63% 60%;
+    --body: 156 7% 29%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 12% 88%;
-    --input: 30 12% 88%;
-    --ring: 180 50% 33%;
-    --radius: 0.6rem;
+    --border: 41 25% 85%;
+    --input: 41 25% 85%;
+    --ring: 164 41% 31%;
+    --radius: 0.85rem;
   }
 
   .dark {
@@ -59,7 +67,45 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-ui);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer utilities {
+  /* Soft Studio helpers reused across surfaces. */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .text-body {
+    color: hsl(var(--body));
+  }
+  .bg-paper {
+    background-color: hsl(var(--background));
+  }
+  .label-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .soft-card-shadow {
+    box-shadow: 0 14px 38px rgba(29, 38, 36, 0.12);
+  }
+  @keyframes floaty {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(6deg); }
+  }
+  .animate-floaty {
+    animation: floaty 5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-floaty {
+      animation: none;
+    }
   }
 }
