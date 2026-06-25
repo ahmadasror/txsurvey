@@ -1,8 +1,8 @@
 .PHONY: run dev build fe-dev fe-build test lint tidy migrate-new up down docker logs
 
 # --- Go ---
-run: ## Run the API (auto-runs migrations at boot)
-	go run ./cmd/server
+run: ## Run the API (loads .env if present; auto-runs migrations at boot)
+	@bash -c 'set -a; [ -f .env ] && . ./.env; set +a; exec go run ./cmd/server'
 
 dev: ## Run with hot-reload if 'air' is installed, else plain run
 	@command -v air >/dev/null 2>&1 && air || go run ./cmd/server

@@ -6,6 +6,11 @@
 .env
 .env.local
 
+# Secrets / keys (never commit)
+key/
+*.key
+client_secret*.json
+
 # Go
 *.test
 *.out
