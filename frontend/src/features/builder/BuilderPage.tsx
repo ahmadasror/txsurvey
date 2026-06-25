@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { SortableQuestionList } from "@/features/builder/SortableQuestionList";
 import { QuestionEditor } from "@/features/builder/QuestionEditor";
+import { cn } from "@/lib/utils";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
 import {
@@ -33,6 +34,13 @@ export function BuilderPage() {
   const [title, setTitle] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // On mobile the list and editor are separate panes (toggled); desktop shows both.
+  const [mobilePane, setMobilePane] = useState<"list" | "editor">("list");
+
+  const selectQuestion = (qid: string | null) => {
+    setSelectedId(qid);
+    if (qid) setMobilePane("editor");
+  };
 
   const questions: Question[] = useMemo(() => form?.questions ?? [], [form]);
 
@@ -70,7 +78,7 @@ export function BuilderPage() {
     const def = typeDef(t);
     addQuestion.mutate(
       { type: t, title: "", required: false, metadata: { ...def.defaultMetadata } },
-      { onSuccess: (q) => setSelectedId(q.id) },
+      { onSuccess: (q) => selectQuestion(q.id) },
     );
   };
 
@@ -131,9 +139,27 @@ export function BuilderPage() {
         )}
       </div>
 
+      {/* Mobile pane toggle (desktop shows both panes side by side) */}
+      <div className="container md:hidden">
+        <div className="mt-4 grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1">
+          {(["list", "editor"] as const).map((pane) => (
+            <button
+              key={pane}
+              onClick={() => setMobilePane(pane)}
+              className={cn(
+                "rounded-md py-1.5 text-sm font-medium capitalize transition-colors",
+                mobilePane === pane ? "bg-background shadow-sm" : "text-muted-foreground",
+              )}
+            >
+              {pane === "list" ? `Questions${questions.length ? ` (${questions.length})` : ""}` : "Editor"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Builder body */}
       <main className="container grid gap-6 py-6 md:grid-cols-[20rem_1fr]">
-        <aside className="space-y-3">
+        <aside className={cn("space-y-3", mobilePane === "editor" && "hidden md:block")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between" disabled={addQuestion.isPending}>
@@ -160,13 +186,13 @@ export function BuilderPage() {
             <SortableQuestionList
               questions={questions}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={selectQuestion}
               onReorder={(ids) => reorder.mutate(ids)}
             />
           )}
         </aside>
 
-        <section>
+        <section className={cn(mobilePane === "list" && "hidden md:block")}>
           {selected ? (
             <Card className="p-6">
               <QuestionEditor
@@ -174,11 +200,14 @@ export function BuilderPage() {
                 question={selected}
                 questions={questions}
                 rules={form.logic_rules ?? []}
-                onDeleted={() => setSelectedId(null)}
+                onDeleted={() => {
+                  setSelectedId(null);
+                  setMobilePane("list");
+                }}
               />
             </Card>
           ) : (
-            <Card className="flex items-center justify-center p-16 text-sm text-muted-foreground">
+            <Card className="flex items-center justify-center p-16 text-center text-sm text-muted-foreground">
               Select or add a question to edit it.
             </Card>
           )}
