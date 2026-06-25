@@ -85,9 +85,12 @@ export interface ThemeSettings {
 export interface FormSettings {
   welcome_title?: string;
   welcome_description?: string;
+  start_button_text?: string;
   thank_you_title?: string;
   thank_you_description?: string;
   redirect_url?: string;
+  banner_url?: string;
+  logo_url?: string;
   show_progress: boolean;
   theme: ThemeSettings;
 }

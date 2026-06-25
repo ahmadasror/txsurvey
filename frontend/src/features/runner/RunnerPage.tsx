@@ -7,6 +7,7 @@ import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { themeStyle } from "@/lib/themes";
+import { assetUrl } from "@/lib/paths";
 import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
@@ -149,6 +150,9 @@ export function RunnerPage() {
             <Welcome
               title={form.settings.welcome_title || form.title}
               description={form.settings.welcome_description || form.description}
+              banner={assetUrl(form.settings.banner_url)}
+              logo={assetUrl(form.settings.logo_url)}
+              startLabel={form.settings.start_button_text?.trim() || "Start"}
               onStart={start}
               empty={questions.length === 0}
             />
@@ -156,6 +160,7 @@ export function RunnerPage() {
             <ThankYou
               title={form.settings.thank_you_title || "Thank you!"}
               description={form.settings.thank_you_description || "Your response has been recorded."}
+              logo={assetUrl(form.settings.logo_url)}
             />
           ) : (
             <AnimatePresence mode="wait">
@@ -202,35 +207,49 @@ export function RunnerPage() {
 function Welcome({
   title,
   description,
+  banner,
+  logo,
+  startLabel,
   onStart,
   empty,
 }: {
   title: string;
   description?: string;
+  banner?: string;
+  logo?: string;
+  startLabel: string;
   onStart: () => void;
   empty: boolean;
 }) {
   return (
     <div className="text-center">
+      {banner && (
+        <img src={banner} alt="" className="mb-6 max-h-52 w-full rounded-2xl border object-cover shadow-sm" />
+      )}
+      {logo && <img src={logo} alt="" className="mx-auto mb-4 size-16 rounded-2xl border object-cover" />}
       <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
       {description && <p className="mt-3 text-lg text-muted-foreground">{description}</p>}
       {empty ? (
         <p className="mt-8 text-muted-foreground">This form has no questions yet.</p>
       ) : (
         <Button size="lg" className="mt-8" onClick={onStart}>
-          Start <ArrowRight />
+          {startLabel} <ArrowRight />
         </Button>
       )}
     </div>
   );
 }
 
-function ThankYou({ title, description }: { title: string; description?: string }) {
+function ThankYou({ title, description, logo }: { title: string; description?: string; logo?: string }) {
   return (
     <div className="text-center">
-      <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10">
-        <Check className="size-7 text-primary" />
-      </div>
+      {logo ? (
+        <img src={logo} alt="" className="mx-auto mb-5 size-16 rounded-2xl border object-cover" />
+      ) : (
+        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10">
+          <Check className="size-7 text-primary" />
+        </div>
+      )}
       <h1 className="text-3xl font-bold">{title}</h1>
       {description && <p className="mt-3 text-lg text-muted-foreground">{description}</p>}
     </div>

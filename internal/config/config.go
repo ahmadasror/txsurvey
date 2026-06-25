@@ -34,6 +34,10 @@ type Config struct {
 
 	// CORS allow-list (split-host dev only; same-origin in prod via embed).
 	CORSAllowedOrigins []string
+
+	// UploadDir is where uploaded form assets (banner/logo) are stored and
+	// served from under /uploads.
+	UploadDir string
 }
 
 // Load reads config from env and validates required fields.
@@ -51,6 +55,7 @@ func Load() (*Config, error) {
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
 		CORSAllowedOrigins: getCSV("CORS_ALLOWED_ORIGINS", []string{"http://localhost:5173"}),
+		UploadDir:          getEnv("UPLOAD_DIR", "uploads"),
 	}
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL is required")

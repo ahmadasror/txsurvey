@@ -17,3 +17,7 @@ export const runnerPath = (slug: string) => `${BASE}r/${slug}`;
 
 /** Absolute public runner URL (for share links). */
 export const runnerUrl = (slug: string) => `${window.location.origin}${runnerPath(slug)}`;
+
+/** assetUrl resolves a stored asset path ("uploads/x.png") to a prefix-aware URL. */
+export const assetUrl = (p?: string): string | undefined =>
+  p ? `${BASE}${p.replace(/^\//, "")}` : undefined;

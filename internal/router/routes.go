@@ -45,6 +45,9 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	authed.POST("/forms/:id/publish", h.Form.Publish)
 	authed.POST("/forms/:id/unpublish", h.Form.Unpublish)
 
+	// Asset upload (banner/logo) for an owned form.
+	authed.POST("/forms/:id/assets", h.Asset.Upload)
+
 	// Questions (nested under a form).
 	authed.POST("/forms/:id/questions", h.Question.Create)
 	authed.PUT("/forms/:id/questions/reorder", h.Question.Reorder)

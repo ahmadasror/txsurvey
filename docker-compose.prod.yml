@@ -17,3 +17,6 @@ services:
     env_file: deploy/production.env
     ports:
       - "172.17.0.1:8092:8080"
+    volumes:
+      # Uploaded form assets (banner/logo) persist on the host.
+      - ./data/uploads:/data/uploads

@@ -9,8 +9,7 @@ import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { SortableQuestionList } from "@/features/builder/SortableQuestionList";
 import { QuestionEditor } from "@/features/builder/QuestionEditor";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ThemePicker } from "@/components/ThemePicker";
+import { DesignDialog } from "@/features/builder/DesignDialog";
 import { cn } from "@/lib/utils";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
@@ -119,7 +118,7 @@ export function BuilderPage() {
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setThemeOpen(true)}>
-              <Palette /> Theme
+              <Palette /> Design
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/forms/${id}/results`}>
@@ -220,25 +219,7 @@ export function BuilderPage() {
         </section>
       </main>
 
-      <Dialog open={themeOpen} onOpenChange={setThemeOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Survey theme</DialogTitle>
-            <DialogDescription>Pick the color theme respondents see.</DialogDescription>
-          </DialogHeader>
-          <ThemePicker
-            value={form.settings.theme?.preset ?? "corporate"}
-            onChange={(id) => {
-              updateForm.mutate({
-                title: form.title,
-                description: form.description,
-                settings: { ...form.settings, theme: { preset: id } },
-              });
-              setThemeOpen(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      <DesignDialog form={form} open={themeOpen} onOpenChange={setThemeOpen} />
     </div>
   );
 }

@@ -28,3 +28,6 @@ internal/web/dist/
 
 # Production secrets
 deploy/production.env
+
+# Uploaded assets (runtime)
+data/

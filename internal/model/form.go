@@ -23,9 +23,12 @@ type ThemeSettings struct {
 type FormSettings struct {
 	WelcomeTitle        string        `json:"welcome_title,omitempty"`
 	WelcomeDescription  string        `json:"welcome_description,omitempty"`
+	StartButtonText     string        `json:"start_button_text,omitempty"`
 	ThankYouTitle       string        `json:"thank_you_title,omitempty"`
 	ThankYouDescription string        `json:"thank_you_description,omitempty"`
 	RedirectURL         string        `json:"redirect_url,omitempty"`
+	BannerURL           string        `json:"banner_url,omitempty"`
+	LogoURL             string        `json:"logo_url,omitempty"`
 	ShowProgress        bool          `json:"show_progress"`
 	Theme               ThemeSettings `json:"theme"`
 }

@@ -59,6 +59,11 @@ func main() {
 	resultsSvc := service.NewResultsService(formRepo, questionRepo, responseRepo)
 	logicSvc := service.NewLogicService(formRepo, questionRepo, logicRepo)
 
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		slog.Error("failed to create upload dir", "dir", cfg.UploadDir, "error", err)
+		os.Exit(1)
+	}
+
 	h := &router.Handlers{
 		Auth:     handler.NewAuthHandler(authSvc, jwtMgr, cfg),
 		Form:     handler.NewFormHandler(formSvc),
@@ -66,6 +71,7 @@ func main() {
 		Public:   handler.NewPublicHandler(responseSvc),
 		Results:  handler.NewResultsHandler(resultsSvc),
 		Logic:    handler.NewLogicHandler(logicSvc),
+		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir),
 	}
 
 	r := router.Setup(cfg, h, jwtMgr)

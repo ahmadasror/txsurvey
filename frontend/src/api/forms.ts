@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { apiBase } from "@/lib/paths";
 import type { Form, FormListItem, LogicRule, LogicRuleInput, Question, QuestionInput } from "@/types/forms";
 
 const formKey = (id: string) => ["form", id] as const;
@@ -32,6 +33,24 @@ export function useDeleteForm() {
   return useMutation({
     mutationFn: (id: string) => api<null>(`/forms/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: formsKey }),
+  });
+}
+
+/** useUploadAsset uploads a banner/logo image (multipart) and returns its URL. */
+export function useUploadAsset(formId: string) {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${apiBase}/forms/${formId}/assets`, {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error?.message ?? "upload failed");
+      return body.data as { url: string };
+    },
   });
 }
 

@@ -28,6 +28,7 @@ type Handlers struct {
 	Public   *handler.PublicHandler
 	Results  *handler.ResultsHandler
 	Logic    *handler.LogicHandler
+	Asset    *handler.AssetHandler
 }
 
 // Setup builds the configured Gin engine. jwtMgr backs the SessionAuth
@@ -55,6 +56,9 @@ func Setup(cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) *gin.Engine
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Uploaded form assets (banner/logo) — public, served from disk.
+	r.Static("/uploads", cfg.UploadDir)
 
 	registerRoutes(r, cfg, h, jwtMgr)
 

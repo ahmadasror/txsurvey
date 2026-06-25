@@ -43,6 +43,18 @@ func newHarness(t *testing.T) *harness {
 	if testing.Short() || dbURL == "" {
 		t.Skip("integration test requires DATABASE_URL and no -short")
 	}
+	// SAFETY: these tests TRUNCATE — never let them run against a non-test DB
+	// (e.g. the production database). Point DATABASE_URL at a *_test database.
+	dbName := dbURL
+	if i := strings.LastIndex(dbName, "/"); i >= 0 {
+		dbName = dbName[i+1:]
+	}
+	if i := strings.IndexByte(dbName, '?'); i >= 0 {
+		dbName = dbName[:i]
+	}
+	if !strings.Contains(dbName, "test") {
+		t.Skipf("refusing to run TRUNCATE-ing tests against non-test database %q — use a *_test DB", dbName)
+	}
 	if err := database.RunMigrations(dbURL); err != nil {
 		t.Fatalf("migrations: %v", err)
 	}
@@ -65,7 +77,7 @@ func newHarness(t *testing.T) *harness {
 	}
 
 	cfg := &config.Config{Env: "test", AppBaseURL: "http://localhost", SessionTTL: time.Hour,
-		CORSAllowedOrigins: []string{"http://localhost"}}
+		CORSAllowedOrigins: []string{"http://localhost"}, UploadDir: t.TempDir()}
 	jwtMgr := auth.NewJWTManager(testSecret, time.Hour)
 
 	userRepo := repository.NewUserRepo(pool)
@@ -81,6 +93,7 @@ func newHarness(t *testing.T) *harness {
 		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo, logicRepo)),
 		Results:  handler.NewResultsHandler(service.NewResultsService(formRepo, questionRepo, responseRepo)),
 		Logic:    handler.NewLogicHandler(service.NewLogicService(formRepo, questionRepo, logicRepo)),
+		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir),
 	}
 	return &harness{t: t, pool: pool, engine: router.Setup(cfg, h, jwtMgr), jwt: jwtMgr, userID: userID}
 }
