@@ -7,8 +7,8 @@ run: ## Run the API (auto-runs migrations at boot)
 dev: ## Run with hot-reload if 'air' is installed, else plain run
 	@command -v air >/dev/null 2>&1 && air || go run ./cmd/server
 
-build: fe-build ## Build the server binary (embeds SPA dist when present)
-	CGO_ENABLED=0 go build -o bin/server ./cmd/server
+build: fe-build ## Build the server binary with the SPA embedded
+	CGO_ENABLED=0 go build -tags embedspa -o bin/server ./cmd/server
 
 test: ## Run all Go tests
 	go test ./...
@@ -34,8 +34,11 @@ migrate-new: ## Scaffold the next migration pair: make migrate-new name=add_foo
 fe-dev: ## Run the Vite dev server (proxies to API on :8080)
 	npm --prefix frontend run dev
 
-fe-build: ## Build the SPA into internal/web/dist for embedding
-	@test -d frontend && (npm --prefix frontend ci && npm --prefix frontend run build) || echo "no frontend/ yet, skipping"
+fe-build: ## Build the SPA and stage it at internal/web/dist for embedding
+	@test -d frontend && ( \
+		npm --prefix frontend ci && npm --prefix frontend run build && \
+		rm -rf internal/web/dist && cp -r frontend/dist internal/web/dist \
+	) || echo "no frontend/ yet, skipping"
 
 # --- Docker ---
 up: ## Start postgres + app

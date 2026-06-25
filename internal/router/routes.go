@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ahmadasror/txsurvey/internal/config"
@@ -21,9 +23,12 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	api.GET("/auth/google/login", h.Auth.GoogleLogin)
 	api.GET("/auth/google/callback", h.Auth.GoogleCallback)
 
-	// Public runner endpoints (anonymous).
-	api.GET("/public/forms/:slug", h.Public.GetForm)
-	api.POST("/public/forms/:slug/responses", h.Public.Submit)
+	// Public runner endpoints (anonymous, rate-limited per IP). Submissions get
+	// a stricter cap than reads.
+	public := api.Group("/public")
+	public.Use(middleware.RateLimit(120, time.Minute))
+	public.GET("/forms/:slug", h.Public.GetForm)
+	public.POST("/forms/:slug/responses", middleware.RateLimit(20, time.Minute), h.Public.Submit)
 
 	// Creator-authenticated group (session cookie required).
 	authed := api.Group("")
