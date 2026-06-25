@@ -169,6 +169,21 @@ func (r *FormRepo) SoftDelete(ctx context.Context, ownerID, id string) (bool, er
 	return tag.RowsAffected() > 0, nil
 }
 
+// GetPublishedBySlug resolves a published, non-deleted form by slug for the
+// public runner (nil, nil when absent or not published).
+func (r *FormRepo) GetPublishedBySlug(ctx context.Context, slug string) (*model.Form, error) {
+	const q = `SELECT ` + formCols + ` FROM forms
+		WHERE slug = $1 AND status = 'published' AND deleted_at IS NULL`
+	f, err := scanForm(r.pool.QueryRow(ctx, q, slug))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get form by slug: %w", err)
+	}
+	return f, nil
+}
+
 // SlugExists reports whether a live form already uses slug.
 func (r *FormRepo) SlugExists(ctx context.Context, slug string) (bool, error) {
 	var exists bool

@@ -49,15 +49,18 @@ func main() {
 	userRepo := repository.NewUserRepo(pool)
 	formRepo := repository.NewFormRepo(pool)
 	questionRepo := repository.NewQuestionRepo(pool)
+	responseRepo := repository.NewResponseRepo(pool)
 
 	authSvc := service.NewAuthService(cfg, userRepo)
 	formSvc := service.NewFormService(formRepo, questionRepo)
 	questionSvc := service.NewQuestionService(formRepo, questionRepo)
+	responseSvc := service.NewResponseService(formRepo, questionRepo, responseRepo)
 
 	h := &router.Handlers{
 		Auth:     handler.NewAuthHandler(authSvc, jwtMgr, cfg),
 		Form:     handler.NewFormHandler(formSvc),
 		Question: handler.NewQuestionHandler(questionSvc),
+		Public:   handler.NewPublicHandler(responseSvc),
 	}
 
 	r := router.Setup(cfg, h, jwtMgr)

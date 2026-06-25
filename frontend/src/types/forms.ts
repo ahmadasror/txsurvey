@@ -83,3 +83,16 @@ export interface QuestionInput {
   required?: boolean;
   metadata?: QuestionMetadata;
 }
+
+/** PublicForm is the runner contract returned by GET /public/forms/:slug. */
+export interface PublicForm {
+  id: string;
+  title: string;
+  description: string;
+  slug: string;
+  settings: FormSettings;
+  questions: Question[];
+}
+
+/** AnswerValue is the per-type answer payload sent on submit. */
+export type AnswerValue = string | number | boolean | string[];

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,11 +71,13 @@ func newHarness(t *testing.T) *harness {
 	userRepo := repository.NewUserRepo(pool)
 	formRepo := repository.NewFormRepo(pool)
 	questionRepo := repository.NewQuestionRepo(pool)
+	responseRepo := repository.NewResponseRepo(pool)
 
 	h := &router.Handlers{
 		Auth:     handler.NewAuthHandler(service.NewAuthService(cfg, userRepo), jwtMgr, cfg),
 		Form:     handler.NewFormHandler(service.NewFormService(formRepo, questionRepo)),
 		Question: handler.NewQuestionHandler(service.NewQuestionService(formRepo, questionRepo)),
+		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo)),
 	}
 	return &harness{t: t, pool: pool, engine: router.Setup(cfg, h, jwtMgr), jwt: jwtMgr, userID: userID}
 }
@@ -188,5 +191,97 @@ func (h *harness) mustCreateQuestion(formID string, body map[string]any, out any
 	h.t.Helper()
 	if code := h.do(http.MethodPost, "/api/v1/forms/"+formID+"/questions", body, out); code != http.StatusCreated {
 		h.t.Fatalf("create question %v: want 201, got %d", body["type"], code)
+	}
+}
+
+// doAnon issues an UNauthenticated request (no session cookie) — for the public
+// runner endpoints — and returns the status plus the raw body.
+func (h *harness) doAnon(method, path string, body any, out any) (int, string) {
+	h.t.Helper()
+	var reqBody io.Reader
+	if body != nil {
+		b, _ := json.Marshal(body)
+		reqBody = bytes.NewReader(b)
+	}
+	req := httptest.NewRequest(method, path, reqBody)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	h.engine.ServeHTTP(rec, req)
+	if out != nil && rec.Body.Len() > 0 {
+		var env struct {
+			Data json.RawMessage `json:"data"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &env); err == nil && len(env.Data) > 0 {
+			_ = json.Unmarshal(env.Data, out)
+		}
+	}
+	return rec.Code, rec.Body.String()
+}
+
+func TestPublicRunnerFlow(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	if code := h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Feedback"}, &form); code != http.StatusCreated {
+		t.Fatalf("create form: %d", code)
+	}
+
+	var q1, q2 struct {
+		ID string `json:"id"`
+	}
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Name?", "required": true}, &q1)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "rating", "title": "Rate us", "metadata": map[string]any{"scale": 5}}, &q2)
+
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+
+	// Anonymous fetch by slug.
+	var public struct {
+		Questions []struct {
+			ID string `json:"id"`
+		} `json:"questions"`
+	}
+	code, bodyStr := h.doAnon(http.MethodGet, "/api/v1/public/forms/"+form.Slug, nil, &public)
+	if code != http.StatusOK {
+		t.Fatalf("public get: want 200, got %d", code)
+	}
+	if len(public.Questions) != 2 {
+		t.Fatalf("want 2 questions, got %d", len(public.Questions))
+	}
+	if strings.Contains(bodyStr, "owner_id") {
+		t.Fatalf("public form leaked owner_id: %s", bodyStr)
+	}
+
+	// Valid submission.
+	valid := map[string]any{"answers": []map[string]any{
+		{"question_id": q1.ID, "value": "Alice"},
+		{"question_id": q2.ID, "value": 4},
+	}}
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses", valid, nil); code != http.StatusCreated {
+		t.Fatalf("submit valid: want 201, got %d", code)
+	}
+
+	// Missing the required name -> 422.
+	missing := map[string]any{"answers": []map[string]any{{"question_id": q2.ID, "value": 3}}}
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses", missing, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("submit missing required: want 422, got %d", code)
+	}
+
+	// Answer to an unknown question -> 422.
+	unknown := map[string]any{"answers": []map[string]any{
+		{"question_id": q1.ID, "value": "Bob"},
+		{"question_id": "00000000-0000-0000-0000-000000000000", "value": "x"},
+	}}
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses", unknown, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("submit unknown question: want 422, got %d", code)
+	}
+
+	// Submitting to an unpublished/unknown slug -> 404.
+	if code, _ := h.doAnon(http.MethodGet, "/api/v1/public/forms/does-not-exist", nil, nil); code != http.StatusNotFound {
+		t.Fatalf("unknown slug: want 404, got %d", code)
 	}
 }

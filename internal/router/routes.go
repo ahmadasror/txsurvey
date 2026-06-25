@@ -21,6 +21,10 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	api.GET("/auth/google/login", h.Auth.GoogleLogin)
 	api.GET("/auth/google/callback", h.Auth.GoogleCallback)
 
+	// Public runner endpoints (anonymous).
+	api.GET("/public/forms/:slug", h.Public.GetForm)
+	api.POST("/public/forms/:slug/responses", h.Public.Submit)
+
 	// Creator-authenticated group (session cookie required).
 	authed := api.Group("")
 	authed.Use(middleware.SessionAuth(jwtMgr))
