@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { GitBranch, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { useAddLogicRule, useDeleteLogicRule, useUpdateLogicRule } from "@/api/forms";
 import type { LogicAction, LogicOperator, LogicRule, LogicRuleInput, Question } from "@/types/forms";
 
@@ -128,29 +128,26 @@ function RuleRow({
     const set = (v: unknown) => setDraft((d) => ({ ...d, compare_value: v }));
     if (source.type === "multiple_choice" || source.type === "checkboxes" || source.type === "dropdown") {
       return (
-        <Select
+        <SimpleSelect
           className="h-9 w-40"
           value={String(draft.compare_value ?? "")}
-          onChange={(e) => set(e.target.value)}
-        >
-          {(source.metadata.options ?? []).map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          onValueChange={(v) => set(v)}
+          placeholder="Value"
+          options={(source.metadata.options ?? []).map((o) => ({ value: o.id, label: o.label }))}
+        />
       );
     }
     if (source.type === "yes_no") {
       return (
-        <Select
+        <SimpleSelect
           className="h-9 w-24"
           value={draft.compare_value === true ? "true" : "false"}
-          onChange={(e) => set(e.target.value === "true")}
-        >
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </Select>
+          onValueChange={(v) => set(v === "true")}
+          options={[
+            { value: "true", label: "Yes" },
+            { value: "false", label: "No" },
+          ]}
+        />
       );
     }
     if (source.type === "rating" || source.type === "number") {
@@ -176,50 +173,35 @@ function RuleRow({
     <div className="rounded-md border bg-background p-2">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">If answer</span>
-        <Select
+        <SimpleSelect
           className="h-9 w-36"
           value={draft.operator}
-          onChange={(e) => setDraft((d) => ({ ...d, operator: e.target.value as LogicOperator }))}
-        >
-          {OPERATORS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          onValueChange={(v) => setDraft((d) => ({ ...d, operator: v as LogicOperator }))}
+          options={OPERATORS.map((o) => ({ value: o.value, label: o.label }))}
+        />
         {setValueControl()}
         <span className="text-muted-foreground">then</span>
-        <Select
+        <SimpleSelect
           className="h-9 w-32"
           value={draft.action}
-          onChange={(e) => {
-            const action = e.target.value as LogicAction;
+          onValueChange={(v) => {
+            const action = v as LogicAction;
             setDraft((d) => ({
               ...d,
               action,
               target_question_id: action === "end_form" ? null : (d.target_question_id ?? targets[0]?.id ?? null),
             }));
           }}
-        >
-          {ACTIONS.map((a) => (
-            <option key={a.value} value={a.value}>
-              {a.label}
-            </option>
-          ))}
-        </Select>
+          options={ACTIONS.map((a) => ({ value: a.value, label: a.label }))}
+        />
         {draft.action !== "end_form" && (
-          <Select
+          <SimpleSelect
             className="h-9 w-44"
             value={draft.target_question_id ?? ""}
-            onChange={(e) => setDraft((d) => ({ ...d, target_question_id: e.target.value }))}
-          >
-            <option value="">Select question…</option>
-            {targets.map((q) => (
-              <option key={q.id} value={q.id}>
-                {q.title || "Untitled"}
-              </option>
-            ))}
-          </Select>
+            onValueChange={(v) => setDraft((d) => ({ ...d, target_question_id: v }))}
+            placeholder="Select question…"
+            options={targets.map((q) => ({ value: q.id, label: q.title || "Untitled" }))}
+          />
         )}
         <div className="ml-auto flex items-center gap-1">
           <Button size="sm" disabled={!dirty || update.isPending} onClick={() => update.mutate({ rid: rule.id, input: draft })}>

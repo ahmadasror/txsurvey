@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BarChart3, Check, Copy, Eye, Loader2, Send, Undo2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Check, ChevronDown, Copy, Eye, Loader2, Plus, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { SortableQuestionList } from "@/features/builder/SortableQuestionList";
@@ -134,21 +134,23 @@ export function BuilderPage() {
       {/* Builder body */}
       <main className="container grid gap-6 py-6 md:grid-cols-[20rem_1fr]">
         <aside className="space-y-3">
-          <Select
-            value=""
-            onChange={(e) => {
-              const t = e.target.value as QuestionType;
-              if (t) onAdd(t);
-              e.currentTarget.value = "";
-            }}
-          >
-            <option value="">+ Add question…</option>
-            {QUESTION_TYPES.map((t) => (
-              <option key={t.type} value={t.type}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-between" disabled={addQuestion.isPending}>
+                <span className="flex items-center gap-2">
+                  <Plus /> Add question
+                </span>
+                <ChevronDown className="size-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+              {QUESTION_TYPES.map((t) => (
+                <DropdownMenuItem key={t.type} onSelect={() => onAdd(t.type)}>
+                  {t.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {questions.length === 0 ? (
             <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 // shadcn/ui-style theme: colors map to CSS variables defined in index.css, so a
 // per-form accent (and light/dark) can be themed at runtime by overriding the
@@ -39,6 +40,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -47,5 +52,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

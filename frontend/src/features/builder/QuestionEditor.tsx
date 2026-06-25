@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { RulesForQuestion } from "@/features/builder/LogicEditor";
@@ -67,13 +67,11 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
 
       <div className="space-y-2">
         <Label>Type</Label>
-        <Select value={draft.type} onChange={(e) => onTypeChange(e.target.value as QuestionType)}>
-          {QUESTION_TYPES.map((t) => (
-            <option key={t.type} value={t.type}>
-              {t.label}
-            </option>
-          ))}
-        </Select>
+        <SimpleSelect
+          value={draft.type}
+          onValueChange={(v) => onTypeChange(v as QuestionType)}
+          options={QUESTION_TYPES.map((t) => ({ value: t.type, label: t.label }))}
+        />
       </div>
 
       <div className="space-y-2">
@@ -100,16 +98,11 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
       {draft.type === "rating" && (
         <div className="space-y-2">
           <Label>Scale</Label>
-          <Select
+          <SimpleSelect
             value={String(meta.scale ?? 5)}
-            onChange={(e) => setMeta({ scale: Number(e.target.value) })}
-          >
-            {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-              <option key={n} value={n}>
-                1 – {n}
-              </option>
-            ))}
-          </Select>
+            onValueChange={(v) => setMeta({ scale: Number(v) })}
+            options={[3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: String(n), label: `1 – ${n}` }))}
+          />
         </div>
       )}
 

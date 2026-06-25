@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
+import { SimpleSelect } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { AnswerValue, Question } from "@/types/forms";
 
@@ -100,19 +100,13 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance }: Prop
 
         {(q.type === "multiple_choice" || q.type === "dropdown") &&
           (q.type === "dropdown" ? (
-            <Select
-              autoFocus
+            <SimpleSelect
               className="h-12 text-lg"
               value={(value as string) ?? ""}
-              onChange={(e) => onChange(e.target.value)}
-            >
-              <option value="">Select…</option>
-              {(meta.options ?? []).map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
+              onValueChange={(v) => onChange(v)}
+              placeholder="Select…"
+              options={(meta.options ?? []).map((o) => ({ value: o.id, label: o.label }))}
+            />
           ) : (
             <div className="space-y-2.5">
               {(meta.options ?? []).map((o, i) => (
