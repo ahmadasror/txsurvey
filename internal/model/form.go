@@ -11,10 +11,12 @@ const (
 	FormClosed    FormStatus = "closed"
 )
 
-// ThemeSettings carries the per-form accent the runner applies (as the
-// --primary CSS variable). Empty falls back to the default theme.
+// ThemeSettings selects the runner's color theme. Preset is one of the named
+// presets (corporate/fun/comical/girl/boy) resolved by the frontend; Accent is
+// a legacy single-color override (hex/hsl) kept for backward compatibility.
 type ThemeSettings struct {
-	Accent string `json:"accent,omitempty"` // hex (#2563eb) or hsl triple
+	Preset string `json:"preset,omitempty"`
+	Accent string `json:"accent,omitempty"`
 }
 
 // FormSettings is the JSONB blob of presentation/behaviour options.

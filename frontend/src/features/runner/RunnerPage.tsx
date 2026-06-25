@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
-import { hexToHslTriple } from "@/lib/theme";
+import { themeStyle } from "@/lib/themes";
 import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
@@ -119,8 +119,7 @@ export function RunnerPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [started, done, current, next, answers]);
 
-  const accent = hexToHslTriple(form?.settings.theme?.accent);
-  const rootStyle = accent ? ({ "--primary": accent, "--ring": accent } as React.CSSProperties) : undefined;
+  const rootStyle = themeStyle(form?.settings.theme);
 
   if (isLoading) return <FullScreenLoader />;
   if (isError || !form)

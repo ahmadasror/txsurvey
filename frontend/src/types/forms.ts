@@ -78,6 +78,7 @@ export interface LogicRuleInput {
 }
 
 export interface ThemeSettings {
+  preset?: string;
   accent?: string;
 }
 

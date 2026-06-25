@@ -1,8 +1,22 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Plus, Trash2, Loader2 } from "lucide-react";
+import { FileText, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ThemePicker } from "@/components/ThemePicker";
+import { api } from "@/api/client";
+import { DEFAULT_THEME_ID } from "@/lib/themes";
 import { useCreateForm, useDeleteForm, useForms } from "@/api/forms";
 import type { FormStatus } from "@/types/forms";
 
@@ -18,15 +32,42 @@ export function FormsListPage() {
   const createForm = useCreateForm();
   const deleteForm = useDeleteForm();
 
-  const onCreate = () =>
-    createForm.mutate("Untitled form", { onSuccess: (form) => navigate(`/forms/${form.id}`) });
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [preset, setPreset] = useState(DEFAULT_THEME_ID);
+  const [creating, setCreating] = useState(false);
+
+  const openCreate = () => {
+    setTitle("");
+    setPreset(DEFAULT_THEME_ID);
+    setOpen(true);
+  };
+
+  const submit = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const form = await createForm.mutateAsync(title.trim() || "Untitled survey");
+      await api(`/forms/${form.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: form.title,
+          description: "",
+          settings: { show_progress: true, theme: { preset } },
+        }),
+      });
+      navigate(`/forms/${form.id}`);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <main className="container max-w-5xl py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Your forms</h1>
-        <Button onClick={onCreate} disabled={createForm.isPending}>
-          {createForm.isPending ? <Loader2 className="animate-spin" /> : <Plus />} New form
+        <h1 className="text-2xl font-semibold">Your surveys</h1>
+        <Button onClick={openCreate}>
+          <Plus /> New survey
         </Button>
       </div>
 
@@ -38,9 +79,9 @@ export function FormsListPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <FileText className="size-10 text-muted-foreground" />
-            <p className="text-muted-foreground">No forms yet. Create your first one.</p>
-            <Button onClick={onCreate} disabled={createForm.isPending}>
-              <Plus /> New form
+            <p className="text-muted-foreground">No surveys yet. Create your first one.</p>
+            <Button onClick={openCreate}>
+              <Plus /> New survey
             </Button>
           </CardContent>
         </Card>
@@ -70,7 +111,7 @@ export function FormsListPage() {
                     e.stopPropagation();
                     if (confirm(`Delete "${f.title}"?`)) deleteForm.mutate(f.id);
                   }}
-                  aria-label="Delete form"
+                  aria-label="Delete survey"
                 >
                   <Trash2 className="text-destructive" />
                 </Button>
@@ -79,6 +120,36 @@ export function FormsListPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New survey</DialogTitle>
+            <DialogDescription>Give it a title and pick a theme — you can change both later.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input
+              autoFocus
+              value={title}
+              placeholder="e.g. Customer feedback"
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+              }}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Theme</Label>
+            <ThemePicker value={preset} onChange={setPreset} />
+          </div>
+          <DialogFooter>
+            <Button onClick={submit} disabled={creating}>
+              {creating ? <Loader2 className="animate-spin" /> : <Sparkles />} Create survey
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

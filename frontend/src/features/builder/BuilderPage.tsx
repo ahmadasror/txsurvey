@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BarChart3, Check, ChevronDown, Copy, Eye, Loader2, Plus, Send, Undo2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Check, ChevronDown, Copy, Eye, Loader2, Palette, Plus, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { SortableQuestionList } from "@/features/builder/SortableQuestionList";
 import { QuestionEditor } from "@/features/builder/QuestionEditor";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ThemePicker } from "@/components/ThemePicker";
 import { cn } from "@/lib/utils";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
@@ -34,6 +36,7 @@ export function BuilderPage() {
   const [title, setTitle] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   // On mobile the list and editor are separate panes (toggled); desktop shows both.
   const [mobilePane, setMobilePane] = useState<"list" | "editor">("list");
 
@@ -115,6 +118,9 @@ export function BuilderPage() {
                 {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Share link"}
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setThemeOpen(true)}>
+              <Palette /> Theme
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/forms/${id}/results`}>
                 <BarChart3 /> Results
@@ -213,6 +219,26 @@ export function BuilderPage() {
           )}
         </section>
       </main>
+
+      <Dialog open={themeOpen} onOpenChange={setThemeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Survey theme</DialogTitle>
+            <DialogDescription>Pick the color theme respondents see.</DialogDescription>
+          </DialogHeader>
+          <ThemePicker
+            value={form.settings.theme?.preset ?? "corporate"}
+            onChange={(id) => {
+              updateForm.mutate({
+                title: form.title,
+                description: form.description,
+                settings: { ...form.settings, theme: { preset: id } },
+              });
+              setThemeOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
