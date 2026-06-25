@@ -1,0 +1,19 @@
+# Production overlay: the txsurvey app (SPA embedded) behind the existing
+# static-web nginx + Cloudflare tunnel on this VPS.
+#
+# The app is published on the docker bridge gateway (172.17.0.1) so the
+# static-web nginx container can reach it the same way it proxies the other
+# apps:  proxy_pass http://172.17.0.1:8092/  (see /home/ahmadasror/static-web/nginx.conf).
+#
+# Postgres is the existing `txsurvey-postgres-1` (service name `postgres` on the
+# txsurvey_default network) — not redefined here.
+#
+# Run:  docker compose -f docker-compose.prod.yml -p txsurvey up -d --build
+services:
+  app:
+    build: .
+    image: txsurvey-app:prod
+    restart: unless-stopped
+    env_file: deploy/production.env
+    ports:
+      - "172.17.0.1:8092:8080"

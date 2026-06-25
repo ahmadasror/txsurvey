@@ -25,3 +25,6 @@ internal/web/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Production secrets
+deploy/production.env
