@@ -31,10 +31,14 @@ code-first; the FRs in `docs/fr/survey/active/` were backfilled to seed traceabi
 - **`make spec-drift`** — advisory FR↔code check: every endpoint declared in an FR
   contract block must exist in `internal/router/routes.go`. Exit 0 (advisory).
 
-Plus the schema gate:
+Plus the gates:
 
-- **`make spec-validate`** — every FR contract block must be schema-valid. This one
-  is meant to be a hard gate (fail the commit/CI on schema violation).
+- **`make spec-validate`** — every FR contract block must be schema-valid (hard gate).
+- **`make docs-check`** — one-shot "are the docs aligned?": runs the schema gate, a
+  coherence sentinel (FR `fr_file` matches its path; `adr_refs`/`sisters` resolve; the
+  ADR index lists exactly the ADR files that exist; warns on FRs missing from the docs
+  README and on ADRs no FR references), then the advisory drift check. Run this before
+  committing a docs change. `make docs-status` lists FRs by partition.
 
 ## Artifact layout
 

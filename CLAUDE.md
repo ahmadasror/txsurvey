@@ -32,9 +32,10 @@ feature, land 3 artifacts:
 2. **ADR** for a non-obvious decision — `docs/architecture/adr/NNN-*.md`.
 3. **Tests green** — `go test ./...` + `cd frontend && npm run build`.
 
-Commands: `/spec <feature>` (fr-writer authors the FR) · `make spec-validate`
-(schema gate — keep clean) · `make spec-drift` (advisory: FR endpoints/tables exist
-in `routes.go`/migrations). Trivial changes (copy, refactor, dep bump) skip the FR.
+Commands: `/spec <feature>` (fr-writer authors the FR) · `make docs-check`
+(one-shot alignment gate: schema + cross-link/ADR-index coherence + advisory drift —
+run before committing docs) · `make spec-validate` / `make spec-drift` / `make docs-status`
+are the individual pieces. Trivial changes (copy, refactor, dep bump) skip the FR.
 
 When you add/change an endpoint or a table, update the owning FR's contract block in
 the same change — `make spec-drift` will otherwise flag the new route as unspecced.

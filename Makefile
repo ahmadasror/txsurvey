@@ -27,10 +27,17 @@ spec-validate: ## Hard gate: validate every FR contract block against the schema
 spec-drift: ## Advisory: FR-declared endpoints/tables exist in code (exit 0)
 	python3 scripts/spec_drift.py
 
-spec-status: ## Show FRs by partition
+spec-status docs-status: ## Show FRs by partition
 	@for p in active done todo; do \
 		echo "[$$p]"; ls docs/fr/survey/$$p/*.md 2>/dev/null | sed 's#.*/#  #' || echo "  (none)"; \
 	done
+
+docs-check: ## One-shot: schema + cross-link/index coherence (gates) + advisory drift
+	@bash -c 'rc=0; \
+		echo "== schema =="      ; python3 scripts/validate_fr_contracts.py || rc=1; echo; \
+		echo "== coherence =="   ; python3 scripts/docs_check.py            || rc=1; echo; \
+		echo "== drift (advisory) ==" ; python3 scripts/spec_drift.py; \
+		echo; [ $$rc = 0 ] && echo "docs-check: PASS" || echo "docs-check: FAIL"; exit $$rc'
 
 # --- Migrations ---
 migrate-new: ## Scaffold the next migration pair: make migrate-new name=add_foo

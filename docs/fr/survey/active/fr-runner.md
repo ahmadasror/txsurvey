@@ -3,7 +3,7 @@
 > **Module**: survey
 > **Status**: Implemented (backfilled)
 > **Date**: 2026-06-25
-> **ADRs**: `docs/architecture/adr/001-dual-logic-engine.md`, `docs/architecture/adr/004-normalized-answers-jsonb-leaf.md`
+> **ADRs**: `docs/architecture/adr/001-dual-logic-engine.md`, `docs/architecture/adr/003-spa-embed-subpath-deploy.md`, `docs/architecture/adr/004-normalized-answers-jsonb-leaf.md`
 > **Sisters**: `docs/fr/survey/active/fr-forms.md`, `docs/fr/survey/active/fr-results.md`
 
 ---
@@ -100,6 +100,7 @@ db:
 cross_links:
   adr_refs:
     - docs/architecture/adr/001-dual-logic-engine.md
+    - docs/architecture/adr/003-spa-embed-subpath-deploy.md
     - docs/architecture/adr/004-normalized-answers-jsonb-leaf.md
   sisters:
     - docs/fr/survey/active/fr-forms.md

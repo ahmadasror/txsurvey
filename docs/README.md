@@ -12,6 +12,7 @@ Lean SDD docs. Start at **[sdd-workflow.md](sdd-workflow.md)** for the process.
 | Spec a new feature | `/spec survey` (fr-writer agent) → writes an FR here |
 | Validate FR contract blocks | `make spec-validate` |
 | Check FR↔code drift (advisory) | `make spec-drift` |
+| **Check everything is aligned** | **`make docs-check`** (schema + cross-links + ADR index + drift) |
 | Build/run/deploy the app | repo root `README.md` and `CLAUDE.md` |
 
 ## Layout
