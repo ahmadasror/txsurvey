@@ -79,8 +79,11 @@ export function BuilderPage() {
 
   const onAdd = (t: QuestionType) => {
     const def = typeDef(t);
+    // A title is required server-side (validateQuestion), so seed a default the
+    // creator can immediately edit — an empty title would 422 and add nothing.
+    const title = def.isStatement ? "Pernyataan baru" : "Pertanyaan baru";
     addQuestion.mutate(
-      { type: t, title: "", required: false, metadata: { ...def.defaultMetadata } },
+      { type: t, title, required: false, metadata: { ...def.defaultMetadata } },
       { onSuccess: (q) => selectQuestion(q.id) },
     );
   };
@@ -108,11 +111,11 @@ export function BuilderPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={saveTitle}
-            className="font-display h-9 max-w-xs border-transparent text-lg font-medium hover:border-input focus-visible:border-input"
+            className="font-display h-9 w-44 min-w-0 flex-1 border-transparent text-lg font-medium hover:border-input focus-visible:border-input sm:max-w-xs sm:flex-none"
           />
           <Badge variant={isPublished ? "success" : "muted"}>{form.status}</Badge>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {isPublished && (
               <Button variant="outline" size="sm" onClick={copyLink}>
                 {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Share link"}
@@ -196,9 +199,12 @@ export function BuilderPage() {
               onReorder={(ids) => reorder.mutate(ids)}
             />
           )}
+          {addQuestion.isError && (
+            <p className="text-sm text-destructive">{(addQuestion.error as Error).message}</p>
+          )}
         </aside>
 
-        <section className={cn(mobilePane === "list" && "hidden md:block")}>
+        <section className={cn("min-w-0", mobilePane === "list" && "hidden md:block")}>
           {selected ? (
             <Card className="rounded-2xl p-6 sm:p-[26px]">
               <QuestionEditor

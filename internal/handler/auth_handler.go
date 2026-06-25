@@ -59,6 +59,36 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	response.OK(c, nil, "logged out")
 }
 
+// DevLogin mints a session for a synthetic test creator without Google. It is
+// for local development / Playwright E2E only and is refused in production
+// (defence-in-depth: the route is also not mounted when APP_ENV=production).
+func (h *AuthHandler) DevLogin(c *gin.Context) {
+	if h.cfg.Env == "production" {
+		response.Error(c, http.StatusNotFound, "NOT_FOUND", "not found")
+		return
+	}
+	var req struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, "email is required")
+		return
+	}
+	user, err := h.svc.DevLogin(c.Request.Context(), req.Email, req.Name)
+	if err != nil {
+		handleServiceError(c, err, "dev login")
+		return
+	}
+	token, err := h.jwt.GenerateSessionToken(user.ID, user.Email, user.Name)
+	if err != nil {
+		handleServiceError(c, err, "mint session")
+		return
+	}
+	h.setSessionCookie(c, token, int(h.jwt.TTL().Seconds()))
+	response.OK(c, user, "dev login ok")
+}
+
 // Me returns the currently signed-in creator.
 func (h *AuthHandler) Me(c *gin.Context) {
 	user, err := h.svc.CurrentUser(c.Request.Context(), userID(c))

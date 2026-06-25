@@ -118,6 +118,23 @@ func (s *AuthService) CurrentUser(ctx context.Context, userID string) (*model.Us
 	return s.users.GetByID(ctx, userID)
 }
 
+// DevLogin upserts a deterministic test creator from an email, bypassing Google.
+// It exists ONLY for local/E2E auth and must never be reachable in production
+// (the route is mounted only when APP_ENV != "production"; the handler re-checks).
+func (s *AuthService) DevLogin(ctx context.Context, email, name string) (*model.User, error) {
+	if email == "" {
+		return nil, apperror.New(http.StatusBadRequest, "DEV_LOGIN_EMAIL", "email is required")
+	}
+	if name == "" {
+		name = email
+	}
+	return s.users.UpsertByGoogleSub(ctx, model.GoogleProfile{
+		Sub:   "dev|" + email, // stable synthetic subject so reruns reuse one user
+		Email: email,
+		Name:  name,
+	})
+}
+
 func randomToken() string {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)

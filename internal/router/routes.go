@@ -23,6 +23,12 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	api.GET("/auth/google/login", h.Auth.GoogleLogin)
 	api.GET("/auth/google/callback", h.Auth.GoogleCallback)
 
+	// Dev/E2E-only password-less login. Mounted only outside production so it is
+	// physically absent from the live router (the handler also re-checks env).
+	if cfg.Env != "production" {
+		api.POST("/auth/dev-login", h.Auth.DevLogin)
+	}
+
 	// Public runner endpoints (anonymous, rate-limited per IP). Submissions get
 	// a stricter cap than reads.
 	public := api.Group("/public")

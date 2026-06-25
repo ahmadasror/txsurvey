@@ -12,6 +12,9 @@ export const apiBase = import.meta.env.VITE_API_BASE_URL ?? `${BASE}api/v1`;
 /** React Router basename — undefined when mounted at the domain root. */
 export const routerBasename = BASE === "/" ? undefined : BASE.replace(/\/$/, "");
 
+/** App home (creator dashboard / login), prefix-aware. */
+export const homePath = BASE;
+
 /** Public runner path (in-app, prefix-aware) for a form slug. */
 export const runnerPath = (slug: string) => `${BASE}r/${slug}`;
 

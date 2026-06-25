@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, CornerDownLeft, Loader2, Send } from "lucide-react";
@@ -8,7 +8,7 @@ import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { themeStyle } from "@/lib/themes";
-import { assetUrl } from "@/lib/paths";
+import { assetUrl, homePath } from "@/lib/paths";
 import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
@@ -84,6 +84,16 @@ export function RunnerPage() {
     setHistory((h) => (h.length > 1 ? h.slice(0, -1) : (setStarted(false), h)));
   }, []);
 
+  // `next` closes over `answers`; a delayed auto-advance (after picking a choice/
+  // rating) must call the LATEST `next` — once the just-picked answer has applied
+  // — otherwise it sees stale state and falsely reports the question unanswered
+  // ("wajib diisi" until you click a second time). Route every timer through a ref.
+  const nextRef = useRef(next);
+  nextRef.current = next;
+  const scheduleAdvance = useCallback((delay = 170) => {
+    window.setTimeout(() => nextRef.current(), delay);
+  }, []);
+
   // Keyboard: Enter advances (except in a textarea); digit keys pick options.
   useEffect(() => {
     if (!started || done || !current) return;
@@ -101,7 +111,7 @@ export function RunnerPage() {
           const opt = current.metadata.options?.[i];
           if (opt) {
             setAnswer(current.id, opt.id);
-            setTimeout(next, 170);
+            scheduleAdvance();
           }
         } else if (current.type === "checkboxes") {
           const opt = current.metadata.options?.[i];
@@ -112,11 +122,11 @@ export function RunnerPage() {
         } else if (current.type === "rating") {
           if (i + 1 <= (current.metadata.scale ?? 5)) {
             setAnswer(current.id, i + 1);
-            setTimeout(next, 170);
+            scheduleAdvance();
           }
         } else if (current.type === "yes_no" && i < 2) {
           setAnswer(current.id, i === 0);
-          setTimeout(next, 170);
+          scheduleAdvance();
         }
       }
     };
@@ -181,7 +191,7 @@ export function RunnerPage() {
                     question={current}
                     value={answers[current.id]}
                     onChange={(v) => setAnswer(current.id, v)}
-                    onAdvance={() => setTimeout(next, 170)}
+                    onAdvance={() => scheduleAdvance()}
                     step={Math.min(history.length, path.length || history.length)}
                     total={Math.max(path.length, history.length)}
                   />
@@ -278,6 +288,17 @@ function ThankYou({ title, description, logo }: { title: string; description?: s
       )}
       <h1 className="font-display text-[32px] leading-tight text-foreground sm:text-[38px]">{title}</h1>
       {description && <p className="text-body mt-3 text-lg">{description}</p>}
+
+      {/* Soft cross-promo: respondents can become creators. */}
+      <div className="mt-10 border-t border-border pt-6">
+        <p className="text-sm text-muted-foreground">Dibuat dengan txsurvey — alat survei gratis.</p>
+        <a
+          href={homePath}
+          className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+        >
+          Bikin surveimu sendiri <ArrowRight className="size-4" />
+        </a>
+      </div>
     </div>
   );
 }
