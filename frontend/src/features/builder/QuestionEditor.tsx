@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { RulesForQuestion } from "@/features/builder/LogicEditor";
 import { useDeleteQuestion, useUpdateQuestion } from "@/api/forms";
@@ -31,6 +32,7 @@ function toInput(q: Question): QuestionInput {
 
 export function QuestionEditor({ formId, question, questions, rules, onDeleted }: Props) {
   const [draft, setDraft] = useState<QuestionInput>(toInput(question));
+  const [confirmDel, setConfirmDel] = useState(false);
   const update = useUpdateQuestion(formId);
   const del = useDeleteQuestion(formId);
 
@@ -57,9 +59,7 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
           variant="ghost"
           size="sm"
           className="text-destructive"
-          onClick={() => {
-            if (confirm("Delete this question?")) del.mutate(question.id, { onSuccess: onDeleted });
-          }}
+          onClick={() => setConfirmDel(true)}
         >
           <Trash2 /> Delete
         </Button>
@@ -160,6 +160,19 @@ export function QuestionEditor({ formId, question, questions, rules, onDeleted }
       {questions.length > 1 && (
         <RulesForQuestion formId={formId} source={question} questions={questions} rules={rules} />
       )}
+
+      <ConfirmDialog
+        open={confirmDel}
+        onOpenChange={setConfirmDel}
+        title="Delete this question?"
+        description="The question and any logic rules that reference it will be removed."
+        confirmText="Delete"
+        destructive
+        onConfirm={() => {
+          del.mutate(question.id, { onSuccess: onDeleted });
+          setConfirmDel(false);
+        }}
+      />
     </div>
   );
 }

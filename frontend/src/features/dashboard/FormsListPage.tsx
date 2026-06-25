@@ -15,10 +15,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ThemePicker } from "@/components/ThemePicker";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { api } from "@/api/client";
 import { DEFAULT_THEME_ID } from "@/lib/themes";
 import { useCreateForm, useDeleteForm, useForms } from "@/api/forms";
-import type { FormStatus } from "@/types/forms";
+import type { FormListItem, FormStatus } from "@/types/forms";
 
 const statusVariant: Record<FormStatus, "success" | "muted" | "secondary"> = {
   published: "success",
@@ -36,6 +37,7 @@ export function FormsListPage() {
   const [title, setTitle] = useState("");
   const [preset, setPreset] = useState(DEFAULT_THEME_ID);
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FormListItem | null>(null);
 
   const openCreate = () => {
     setTitle("");
@@ -109,7 +111,7 @@ export function FormsListPage() {
                   size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete "${f.title}"?`)) deleteForm.mutate(f.id);
+                    setDeleteTarget(f);
                   }}
                   aria-label="Delete survey"
                 >
@@ -150,6 +152,23 @@ export function FormsListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete this survey?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.title}" and its ${deleteTarget.response_count} response${deleteTarget.response_count === 1 ? "" : "s"} will be permanently deleted.`
+            : undefined
+        }
+        confirmText="Delete"
+        destructive
+        onConfirm={() => {
+          if (deleteTarget) deleteForm.mutate(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+      />
     </main>
   );
 }
