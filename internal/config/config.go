@@ -23,6 +23,9 @@ type Config struct {
 	JWTSecret    string
 	SessionTTL   time.Duration
 	CookieSecure bool
+	// CookiePath scopes the session cookie. Set to the deploy subpath (e.g.
+	// "/txsurvey") so the cookie isn't shared with other apps on the same host.
+	CookiePath string
 
 	// Google OAuth (sign-in only).
 	GoogleClientID     string
@@ -43,6 +46,7 @@ func Load() (*Config, error) {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		SessionTTL:         getDuration("SESSION_TTL", 24*time.Hour),
 		CookieSecure:       getBool("COOKIE_SECURE", false),
+		CookiePath:         getEnv("COOKIE_PATH", "/"),
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),

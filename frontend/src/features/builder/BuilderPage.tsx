@@ -10,6 +10,7 @@ import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { SortableQuestionList } from "@/features/builder/SortableQuestionList";
 import { QuestionEditor } from "@/features/builder/QuestionEditor";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
+import { runnerPath, runnerUrl } from "@/lib/paths";
 import {
   useAddQuestion,
   useForm,
@@ -73,7 +74,7 @@ export function BuilderPage() {
     );
   };
 
-  const publicUrl = `${window.location.origin}/r/${form.slug}`;
+  const publicUrl = runnerUrl(form.slug);
   const copyLink = () => {
     navigator.clipboard.writeText(publicUrl).then(() => {
       setCopied(true);
@@ -111,7 +112,7 @@ export function BuilderPage() {
                 <BarChart3 /> Results
               </Link>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.open(`/r/${form.slug}`, "_blank")}>
+            <Button variant="outline" size="sm" onClick={() => window.open(runnerPath(form.slug), "_blank")}>
               <Eye /> Preview
             </Button>
             {isPublished ? (

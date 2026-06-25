@@ -38,6 +38,9 @@ func Setup(cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) *gin.Engine
 	}
 
 	r := gin.New()
+	// Behind nginx on the same host: trust the loopback proxy so c.ClientIP()
+	// (used by the rate limiter) reads the real client from X-Forwarded-For.
+	_ = r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
 	r.Use(middleware.RequestLogger())

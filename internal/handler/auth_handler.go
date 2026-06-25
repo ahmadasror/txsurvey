@@ -74,10 +74,14 @@ func (h *AuthHandler) Me(c *gin.Context) {
 }
 
 func (h *AuthHandler) setSessionCookie(c *gin.Context, value string, maxAge int) {
+	path := h.cfg.CookiePath
+	if path == "" {
+		path = "/"
+	}
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     middleware.SessionCookieName,
 		Value:    value,
-		Path:     "/",
+		Path:     path,
 		MaxAge:   maxAge,
 		HttpOnly: true,
 		Secure:   h.cfg.CookieSecure,

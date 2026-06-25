@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { apiBase } from "@/lib/paths";
 import type { FormAnalytics, ResponseItem } from "@/types/forms";
 
 export function useResponses(formId: string) {
@@ -18,5 +19,4 @@ export function useAnalytics(formId: string) {
 
 /** csvUrl is the same-origin export endpoint; a plain anchor download carries
  *  the session cookie automatically. */
-export const csvUrl = (formId: string) =>
-  `${import.meta.env.VITE_API_BASE_URL ?? "/api/v1"}/forms/${formId}/export.csv`;
+export const csvUrl = (formId: string) => `${apiBase}/forms/${formId}/export.csv`;

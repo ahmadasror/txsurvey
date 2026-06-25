@@ -59,6 +59,25 @@ make build        # builds the SPA, stages it at internal/web/dist, then
 The `embedspa` build tag controls embedding: default builds (`make run`, `go test`) do **not**
 embed, so backend dev never needs a frontend build; the `Dockerfile` and `make build` use the tag.
 
+### Deploy under a subpath (e.g. `ct.tuxceria.biz.id/txsurvey`)
+
+The app is path-prefix-aware. nginx strips the `/txsurvey/` prefix and proxies to the Go app
+(which stays at the root — no Go routing changes); the SPA build bakes the prefix into asset URLs,
+the router basename, the API base, and runner share links.
+
+1. **Frontend prefix** — set in `frontend/.env.production` (`VITE_BASE=/txsurvey/`). `make build`
+   picks this up automatically. Everything else derives from Vite's `BASE_URL` (see `src/lib/paths.ts`).
+2. **Backend env** — copy `deploy/production.env.example`: `APP_BASE_URL` and `GOOGLE_REDIRECT_URL`
+   include the subpath, `COOKIE_PATH=/txsurvey` (scopes the session cookie to the subpath),
+   `COOKIE_SECURE=true`.
+3. **nginx** — use `deploy/nginx-txsurvey.conf` (the trailing slash on `proxy_pass …:8080/;` is what
+   strips the prefix). The app trusts the loopback proxy so the rate limiter sees real client IPs.
+4. **Google Console** — Authorized redirect URI must be exactly
+   `https://ct.tuxceria.biz.id/txsurvey/api/v1/auth/google/callback`.
+
+To deploy at the domain root instead (e.g. a dedicated subdomain), set `VITE_BASE=/` and
+`COOKIE_PATH=/`, and drop the subpath from `APP_BASE_URL` / the redirect URI — no other changes.
+
 ## Environment
 
 | Var | Purpose |

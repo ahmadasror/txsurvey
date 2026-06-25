@@ -1,6 +1,5 @@
 import type { ApiError } from "@/types";
-
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+import { apiBase } from "@/lib/paths";
 
 /** ApiRequestError carries the server's error code so callers can branch. */
 export class ApiRequestError extends Error {
@@ -19,7 +18,7 @@ export class ApiRequestError extends Error {
  * the server's {code,message}.
  */
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${apiBase}${path}`, {
     credentials: "include",
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     ...init,
@@ -40,4 +39,4 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /** loginUrl is the top-level navigation target that starts Google sign-in. */
-export const loginUrl = () => `${BASE}/auth/google/login`;
+export const loginUrl = () => `${apiBase}/auth/google/login`;
