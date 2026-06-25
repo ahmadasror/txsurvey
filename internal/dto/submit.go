@@ -27,4 +27,5 @@ type PublicForm struct {
 	Slug        string             `json:"slug"`
 	Settings    model.FormSettings `json:"settings"`
 	Questions   []model.Question   `json:"questions"`
+	LogicRules  []model.LogicRule  `json:"logic_rules"`
 }

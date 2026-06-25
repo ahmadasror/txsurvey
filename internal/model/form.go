@@ -41,6 +41,7 @@ type Form struct {
 	CreatedAt   time.Time    `json:"created_at"`
 	UpdatedAt   time.Time    `json:"updated_at"`
 	Questions   []Question   `json:"questions,omitempty"`
+	LogicRules  []LogicRule  `json:"logic_rules,omitempty"`
 }
 
 // FormListItem is a form summary row for the dashboard list.

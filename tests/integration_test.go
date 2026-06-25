@@ -72,13 +72,15 @@ func newHarness(t *testing.T) *harness {
 	formRepo := repository.NewFormRepo(pool)
 	questionRepo := repository.NewQuestionRepo(pool)
 	responseRepo := repository.NewResponseRepo(pool)
+	logicRepo := repository.NewLogicRepo(pool)
 
 	h := &router.Handlers{
 		Auth:     handler.NewAuthHandler(service.NewAuthService(cfg, userRepo), jwtMgr, cfg),
-		Form:     handler.NewFormHandler(service.NewFormService(formRepo, questionRepo)),
+		Form:     handler.NewFormHandler(service.NewFormService(formRepo, questionRepo, logicRepo)),
 		Question: handler.NewQuestionHandler(service.NewQuestionService(formRepo, questionRepo)),
-		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo)),
+		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo, logicRepo)),
 		Results:  handler.NewResultsHandler(service.NewResultsService(formRepo, questionRepo, responseRepo)),
+		Logic:    handler.NewLogicHandler(service.NewLogicService(formRepo, questionRepo, logicRepo)),
 	}
 	return &harness{t: t, pool: pool, engine: router.Setup(cfg, h, jwtMgr), jwt: jwtMgr, userID: userID}
 }
@@ -284,6 +286,85 @@ func TestE2EHappyPath(t *testing.T) {
 	}
 	if !strings.Contains(csvBody, "Alice") || !strings.Contains(csvBody, "Bob") {
 		t.Fatalf("CSV missing answer values: %q", csvBody)
+	}
+}
+
+// TestBranchingSubmission exercises Phase 5: a jump rule skips q2 when q1=yes,
+// and the server validates required-ness against the reachable path + rejects
+// answers to skipped questions.
+func TestBranchingSubmission(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Branching"}, &form)
+
+	var q1, q2, q3 struct {
+		ID string `json:"id"`
+	}
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "yes_no", "title": "Skip the next one?"}, &q1)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Why are you here?", "required": true}, &q2)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Anything else?"}, &q3)
+
+	// Rule: if q1 == true, jump to q3 (skipping the required q2).
+	rule := map[string]any{
+		"source_question_id": q1.ID,
+		"operator":           "eq",
+		"compare_value":      true,
+		"action":             "jump_to",
+		"target_question_id": q3.ID,
+	}
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/logic", rule, nil); code != http.StatusCreated {
+		t.Fatalf("create rule: want 201, got %d", code)
+	}
+
+	// A backward jump must be rejected.
+	bad := map[string]any{"source_question_id": q3.ID, "operator": "eq", "compare_value": "x", "action": "jump_to", "target_question_id": q1.ID}
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/logic", bad, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("backward jump: want 422, got %d", code)
+	}
+
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+
+	// Public contract carries the logic rule.
+	var public struct {
+		LogicRules []struct {
+			Action string `json:"action"`
+		} `json:"logic_rules"`
+	}
+	h.doAnon(http.MethodGet, "/api/v1/public/forms/"+form.Slug, nil, &public)
+	if len(public.LogicRules) != 1 || public.LogicRules[0].Action != "jump_to" {
+		t.Fatalf("public logic rules: %+v", public.LogicRules)
+	}
+
+	submit := func(answers []map[string]any) int {
+		code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses",
+			map[string]any{"answers": answers}, nil)
+		return code
+	}
+
+	// q1=yes -> q2 skipped; answering only q1 & q3 is valid.
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": true}, {"question_id": q3.ID, "value": "bye"}}); code != http.StatusCreated {
+		t.Fatalf("branch-taken valid: want 201, got %d", code)
+	}
+
+	// q1=yes but also answering the skipped q2 -> rejected (unreachable).
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": true}, {"question_id": q2.ID, "value": "sneaky"}}); code != http.StatusUnprocessableEntity {
+		t.Fatalf("answer to skipped question: want 422, got %d", code)
+	}
+
+	// q1=no -> q2 is on the path and required; omitting it fails.
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": false}}); code != http.StatusUnprocessableEntity {
+		t.Fatalf("missing required on path: want 422, got %d", code)
+	}
+
+	// q1=no with q2 answered -> valid.
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": false}, {"question_id": q2.ID, "value": "curious"}}); code != http.StatusCreated {
+		t.Fatalf("branch-not-taken valid: want 201, got %d", code)
 	}
 }
 

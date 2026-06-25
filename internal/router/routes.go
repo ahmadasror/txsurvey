@@ -46,6 +46,12 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	authed.PATCH("/forms/:id/questions/:qid", h.Question.Update)
 	authed.DELETE("/forms/:id/questions/:qid", h.Question.Delete)
 
+	// Logic rules (nested under a form).
+	authed.GET("/forms/:id/logic", h.Logic.List)
+	authed.POST("/forms/:id/logic", h.Logic.Create)
+	authed.PATCH("/forms/:id/logic/:rid", h.Logic.Update)
+	authed.DELETE("/forms/:id/logic/:rid", h.Logic.Delete)
+
 	// Results: responses, analytics, CSV export.
 	authed.GET("/forms/:id/responses", h.Results.ListResponses)
 	authed.GET("/forms/:id/responses/:rid", h.Results.GetResponse)

@@ -42,6 +42,41 @@ export interface Question {
   updated_at: string;
 }
 
+export type LogicOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "contains"
+  | "not_contains"
+  | "is_empty"
+  | "is_not_empty";
+
+export type LogicAction = "jump_to" | "show" | "hide" | "end_form";
+
+export interface LogicRule {
+  id: string;
+  form_id: string;
+  source_question_id: string;
+  operator: LogicOperator;
+  compare_value?: unknown;
+  action: LogicAction;
+  target_question_id?: string | null;
+  priority: number;
+  created_at: string;
+}
+
+export interface LogicRuleInput {
+  source_question_id: string;
+  operator: LogicOperator;
+  compare_value?: unknown;
+  action: LogicAction;
+  target_question_id?: string | null;
+  priority?: number;
+}
+
 export interface ThemeSettings {
   accent?: string;
 }
@@ -68,6 +103,7 @@ export interface Form {
   created_at: string;
   updated_at: string;
   questions?: Question[];
+  logic_rules?: LogicRule[];
 }
 
 export interface FormListItem extends Form {
@@ -92,6 +128,7 @@ export interface PublicForm {
   slug: string;
   settings: FormSettings;
   questions: Question[];
+  logic_rules: LogicRule[];
 }
 
 /** AnswerValue is the per-type answer payload sent on submit. */

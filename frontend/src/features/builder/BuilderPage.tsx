@@ -166,7 +166,13 @@ export function BuilderPage() {
         <section>
           {selected ? (
             <Card className="p-6">
-              <QuestionEditor formId={id} question={selected} onDeleted={() => setSelectedId(null)} />
+              <QuestionEditor
+                formId={id}
+                question={selected}
+                questions={questions}
+                rules={form.logic_rules ?? []}
+                onDeleted={() => setSelectedId(null)}
+              />
             </Card>
           ) : (
             <Card className="flex items-center justify-center p-16 text-sm text-muted-foreground">

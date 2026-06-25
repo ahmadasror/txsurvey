@@ -18,17 +18,21 @@ type ResponseService struct {
 	forms     *repository.FormRepo
 	questions *repository.QuestionRepo
 	responses *repository.ResponseRepo
+	logic     *repository.LogicRepo
 }
 
-func NewResponseService(forms *repository.FormRepo, questions *repository.QuestionRepo, responses *repository.ResponseRepo) *ResponseService {
-	return &ResponseService{forms: forms, questions: questions, responses: responses}
+func NewResponseService(forms *repository.FormRepo, questions *repository.QuestionRepo, responses *repository.ResponseRepo, logic *repository.LogicRepo) *ResponseService {
+	return &ResponseService{forms: forms, questions: questions, responses: responses, logic: logic}
 }
 
 // GetPublicForm returns the runner contract for a published form by slug.
 func (s *ResponseService) GetPublicForm(ctx context.Context, slug string) (*dto.PublicForm, error) {
-	form, questions, err := s.loadPublished(ctx, slug)
+	form, questions, rules, err := s.loadPublished(ctx, slug)
 	if err != nil {
 		return nil, err
+	}
+	if rules == nil {
+		rules = []model.LogicRule{}
 	}
 	return &dto.PublicForm{
 		ID:          form.ID,
@@ -37,13 +41,16 @@ func (s *ResponseService) GetPublicForm(ctx context.Context, slug string) (*dto.
 		Slug:        form.Slug,
 		Settings:    form.Settings,
 		Questions:   questions,
+		LogicRules:  rules,
 	}, nil
 }
 
 // Submit validates and persists a completed submission. Returns the new
-// response id.
+// response id. Validation is LOGIC-AWARE: the server replays the reachable path
+// the submitted answers imply, enforces required-ness only on reachable
+// questions, and rejects answers to questions that weren't reached (anti-tamper).
 func (s *ResponseService) Submit(ctx context.Context, slug string, req dto.SubmitResponseRequest, meta model.ResponseMeta) (string, error) {
-	form, questions, err := s.loadPublished(ctx, slug)
+	form, questions, rules, err := s.loadPublished(ctx, slug)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +69,12 @@ func (s *ResponseService) Submit(ctx context.Context, slug string, req dto.Submi
 		submitted[a.QuestionID] = a.Value
 	}
 
-	stored, err := s.validateSubmission(questions, submitted)
+	reachable := make(map[string]bool)
+	for _, id := range reachablePath(questions, rules, submitted) {
+		reachable[id] = true
+	}
+
+	stored, err := s.validateSubmission(questions, submitted, reachable)
 	if err != nil {
 		return "", err
 	}
@@ -70,9 +82,10 @@ func (s *ResponseService) Submit(ctx context.Context, slug string, req dto.Submi
 	return s.responses.Insert(ctx, form.ID, true, meta, stored)
 }
 
-// validateSubmission walks the form's questions in order, validating each
-// submitted value and enforcing required-ness, returning the answers to store.
-func (s *ResponseService) validateSubmission(questions []model.Question, submitted map[string]json.RawMessage) ([]model.Answer, error) {
+// validateSubmission walks the form's questions in order. A reachable +
+// answerable question that is required must have a non-empty answer; an answer
+// to an unreachable question is rejected.
+func (s *ResponseService) validateSubmission(questions []model.Question, submitted map[string]json.RawMessage, reachable map[string]bool) ([]model.Answer, error) {
 	stored := make([]model.Answer, 0, len(submitted))
 	for _, q := range questions {
 		raw, present := submitted[q.ID]
@@ -80,6 +93,13 @@ func (s *ResponseService) validateSubmission(questions []model.Question, submitt
 		if q.Type == model.QStatement {
 			if present && !isJSONEmpty(raw) {
 				return nil, answerErr("statement questions cannot be answered")
+			}
+			continue
+		}
+
+		if !reachable[q.ID] {
+			if present && !isJSONEmpty(raw) {
+				return nil, answerErr("answer for a question that wasn't reached on this path")
 			}
 			continue
 		}
@@ -106,19 +126,23 @@ func (s *ResponseService) validateSubmission(questions []model.Question, submitt
 	return stored, nil
 }
 
-func (s *ResponseService) loadPublished(ctx context.Context, slug string) (*model.Form, []model.Question, error) {
+func (s *ResponseService) loadPublished(ctx context.Context, slug string) (*model.Form, []model.Question, []model.LogicRule, error) {
 	form, err := s.forms.GetPublishedBySlug(ctx, slug)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if form == nil {
-		return nil, nil, apperror.New(http.StatusNotFound, "FORM_NOT_FOUND", "form not found or not published")
+		return nil, nil, nil, apperror.New(http.StatusNotFound, "FORM_NOT_FOUND", "form not found or not published")
 	}
 	questions, err := s.questions.ListByForm(ctx, form.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return form, questions, nil
+	rules, err := s.logic.ListByForm(ctx, form.ID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return form, questions, rules, nil
 }
 
 func requiredErr(q model.Question) error {

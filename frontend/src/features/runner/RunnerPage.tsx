@@ -7,12 +7,13 @@ import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { hexToHslTriple } from "@/lib/theme";
-import type { AnswerValue, Question } from "@/types/forms";
+import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
+import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
-type Answers = Record<string, AnswerValue>;
+type Answers = Record<string, AnswerValue | undefined>;
 
 const isEmpty = (v: AnswerValue | undefined): boolean =>
-  v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
+  v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
 
 export function RunnerPage() {
   const { slug = "" } = useParams();
@@ -20,30 +21,46 @@ export function RunnerPage() {
   const submit = useSubmitResponse(slug);
 
   const [started, setStarted] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [history, setHistory] = useState<string[]>([]); // visited question ids; current = last
   const [done, setDone] = useState(false);
   const [answers, setAnswers] = useState<Answers>({});
   const [error, setError] = useState<string | null>(null);
 
   const questions: Question[] = useMemo(() => form?.questions ?? [], [form]);
-  const current = questions[index];
+  const rules: LogicRule[] = useMemo(() => form?.logic_rules ?? [], [form]);
+
+  const currentId = history[history.length - 1];
+  const current = questions.find((q) => q.id === currentId) ?? null;
 
   const setAnswer = (qid: string, v: AnswerValue) => {
     setAnswers((a) => ({ ...a, [qid]: v }));
     setError(null);
   };
 
-  const doSubmit = useCallback(() => {
-    const payload: SubmitAnswer[] = questions
-      .filter((q) => q.type !== "statement" && !isEmpty(answers[q.id]))
-      .map((q) => ({ question_id: q.id, value: answers[q.id] }));
-    submit.mutate(payload, {
-      onSuccess: () => {
-        if (form?.settings.redirect_url) window.location.href = form.settings.redirect_url;
-        else setDone(true);
-      },
-    });
-  }, [answers, questions, submit, form]);
+  const start = () => {
+    const first = firstQuestionId(questions, rules, answers);
+    if (first) {
+      setHistory([first]);
+      setStarted(true);
+    }
+  };
+
+  const doSubmit = useCallback(
+    (finalAnswers: Answers) => {
+      // Only submit answers to questions actually on the reachable path.
+      const reach = new Set(reachablePath(questions, rules, finalAnswers));
+      const payload: SubmitAnswer[] = questions
+        .filter((q) => q.type !== "statement" && reach.has(q.id) && !isEmpty(finalAnswers[q.id]))
+        .map((q) => ({ question_id: q.id, value: finalAnswers[q.id] as AnswerValue }));
+      submit.mutate(payload, {
+        onSuccess: () => {
+          if (form?.settings.redirect_url) window.location.href = form.settings.redirect_url;
+          else setDone(true);
+        },
+      });
+    },
+    [questions, rules, submit, form],
+  );
 
   const next = useCallback(() => {
     if (!current) return;
@@ -52,28 +69,28 @@ export function RunnerPage() {
       return;
     }
     setError(null);
-    if (index < questions.length - 1) setIndex((i) => i + 1);
-    else doSubmit();
-  }, [current, answers, index, questions.length, doSubmit]);
+    const nid = nextQuestionId(questions, rules, answers, current.id);
+    if (nid === null) doSubmit(answers);
+    else setHistory((h) => [...h, nid]);
+  }, [current, answers, questions, rules, doSubmit]);
 
   const back = useCallback(() => {
     setError(null);
-    if (index > 0) setIndex((i) => i - 1);
-    else setStarted(false);
-  }, [index]);
+    setHistory((h) => (h.length > 1 ? h.slice(0, -1) : (setStarted(false), h)));
+  }, []);
 
-  // Keyboard: Enter advances (except inside a textarea); digit keys pick options.
+  // Keyboard: Enter advances (except in a textarea); digit keys pick options.
   useEffect(() => {
     if (!started || done || !current) return;
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement;
-      const inField = el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement;
       if (e.key === "Enter" && !(el instanceof HTMLTextAreaElement)) {
         e.preventDefault();
         next();
         return;
       }
-      if (!inField && !(el instanceof HTMLInputElement) && /^[1-9]$/.test(e.key)) {
+      const inField = el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement;
+      if (!inField && /^[1-9]$/.test(e.key)) {
         const i = Number(e.key) - 1;
         if (current.type === "multiple_choice") {
           const opt = current.metadata.options?.[i];
@@ -88,8 +105,7 @@ export function RunnerPage() {
             setAnswer(current.id, arr.includes(opt.id) ? arr.filter((x) => x !== opt.id) : [...arr, opt.id]);
           }
         } else if (current.type === "rating") {
-          const scale = current.metadata.scale ?? 5;
-          if (i + 1 <= scale) {
+          if (i + 1 <= (current.metadata.scale ?? 5)) {
             setAnswer(current.id, i + 1);
             setTimeout(next, 120);
           }
@@ -115,9 +131,10 @@ export function RunnerPage() {
       </Centered>
     );
 
-  const showProgress = form.settings.show_progress && started && !done && questions.length > 0;
-  const progress = questions.length ? ((index + 1) / questions.length) * 100 : 0;
-  const isLast = index === questions.length - 1;
+  const path = reachablePath(questions, rules, answers);
+  const showProgress = form.settings.show_progress && started && !done && path.length > 0;
+  const progress = path.length ? (Math.min(history.length, path.length) / path.length) * 100 : 0;
+  const isLast = current ? nextQuestionId(questions, rules, answers, current.id) === null : false;
 
   return (
     <div style={rootStyle} className="flex min-h-dvh flex-col bg-background">
@@ -133,7 +150,7 @@ export function RunnerPage() {
             <Welcome
               title={form.settings.welcome_title || form.title}
               description={form.settings.welcome_description || form.description}
-              onStart={() => (questions.length ? setStarted(true) : null)}
+              onStart={start}
               empty={questions.length === 0}
             />
           ) : done ? (
@@ -144,7 +161,7 @@ export function RunnerPage() {
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
-                key={index}
+                key={currentId}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -24 }}
@@ -160,19 +177,11 @@ export function RunnerPage() {
                 )}
 
                 {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-                {submit.isError && (
-                  <p className="mt-3 text-sm text-destructive">{(submit.error as Error).message}</p>
-                )}
+                {submit.isError && <p className="mt-3 text-sm text-destructive">{(submit.error as Error).message}</p>}
 
                 <div className="mt-8 flex items-center gap-3">
                   <Button onClick={next} size="lg" disabled={submit.isPending}>
-                    {submit.isPending ? (
-                      <Loader2 className="animate-spin" />
-                    ) : isLast ? (
-                      <Send />
-                    ) : (
-                      <ArrowRight />
-                    )}
+                    {submit.isPending ? <Loader2 className="animate-spin" /> : isLast ? <Send /> : <ArrowRight />}
                     {isLast ? "Submit" : "OK"}
                   </Button>
                   <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
@@ -230,7 +239,5 @@ function ThankYou({ title, description }: { title: string; description?: string 
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-1 p-6 text-center">{children}</div>
-  );
+  return <div className="flex min-h-dvh flex-col items-center justify-center gap-1 p-6 text-center">{children}</div>;
 }

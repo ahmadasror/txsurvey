@@ -22,6 +22,7 @@ type Handlers struct {
 	Question *handler.QuestionHandler
 	Public   *handler.PublicHandler
 	Results  *handler.ResultsHandler
+	Logic    *handler.LogicHandler
 }
 
 // Setup builds the configured Gin engine. jwtMgr backs the SessionAuth

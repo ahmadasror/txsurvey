@@ -7,12 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
+import { RulesForQuestion } from "@/features/builder/LogicEditor";
 import { useDeleteQuestion, useUpdateQuestion } from "@/api/forms";
-import type { Option, Question, QuestionInput, QuestionType } from "@/types/forms";
+import type { LogicRule, Option, Question, QuestionInput, QuestionType } from "@/types/forms";
 
 interface Props {
   formId: string;
   question: Question;
+  questions: Question[];
+  rules: LogicRule[];
   onDeleted: () => void;
 }
 
@@ -26,7 +29,7 @@ function toInput(q: Question): QuestionInput {
   };
 }
 
-export function QuestionEditor({ formId, question, onDeleted }: Props) {
+export function QuestionEditor({ formId, question, questions, rules, onDeleted }: Props) {
   const [draft, setDraft] = useState<QuestionInput>(toInput(question));
   const update = useUpdateQuestion(formId);
   const del = useDeleteQuestion(formId);
@@ -159,6 +162,10 @@ export function QuestionEditor({ formId, question, onDeleted }: Props) {
       </div>
       {update.isError && (
         <p className="text-sm text-destructive">{(update.error as Error).message}</p>
+      )}
+
+      {questions.length > 1 && (
+        <RulesForQuestion formId={formId} source={question} questions={questions} rules={rules} />
       )}
     </div>
   );

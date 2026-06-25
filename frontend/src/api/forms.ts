@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import type { Form, FormListItem, Question, QuestionInput } from "@/types/forms";
+import type { Form, FormListItem, LogicRule, LogicRuleInput, Question, QuestionInput } from "@/types/forms";
 
 const formKey = (id: string) => ["form", id] as const;
 const formsKey = ["forms"] as const;
@@ -95,6 +95,34 @@ export function useReorderQuestions(formId: string) {
         method: "PUT",
         body: JSON.stringify({ ordered_ids: orderedIds }),
       }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKey(formId) }),
+  });
+}
+
+// --- Logic rules (nested) — invalidate the parent form detail ---
+
+export function useAddLogicRule(formId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: LogicRuleInput) =>
+      api<LogicRule>(`/forms/${formId}/logic`, { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKey(formId) }),
+  });
+}
+
+export function useUpdateLogicRule(formId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rid, input }: { rid: string; input: LogicRuleInput }) =>
+      api<LogicRule>(`/forms/${formId}/logic/${rid}`, { method: "PATCH", body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKey(formId) }),
+  });
+}
+
+export function useDeleteLogicRule(formId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rid: string) => api<null>(`/forms/${formId}/logic/${rid}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: formKey(formId) }),
   });
 }

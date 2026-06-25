@@ -16,10 +16,11 @@ import (
 type FormService struct {
 	forms     *repository.FormRepo
 	questions *repository.QuestionRepo
+	logic     *repository.LogicRepo
 }
 
-func NewFormService(forms *repository.FormRepo, questions *repository.QuestionRepo) *FormService {
-	return &FormService{forms: forms, questions: questions}
+func NewFormService(forms *repository.FormRepo, questions *repository.QuestionRepo, logic *repository.LogicRepo) *FormService {
+	return &FormService{forms: forms, questions: questions, logic: logic}
 }
 
 // Create makes a new draft form with a globally-unique slug.
@@ -54,6 +55,11 @@ func (s *FormService) Get(ctx context.Context, ownerID, id string) (*model.Form,
 	if err := s.attachQuestions(ctx, form); err != nil {
 		return nil, err
 	}
+	rules, err := s.logic.ListByForm(ctx, form.ID)
+	if err != nil {
+		return nil, err
+	}
+	form.LogicRules = rules
 	return form, nil
 }
 
