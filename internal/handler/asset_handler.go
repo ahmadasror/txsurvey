@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -27,12 +28,13 @@ var allowedImageTypes = map[string]string{
 
 // AssetHandler stores and serves uploaded form assets (banner/logo).
 type AssetHandler struct {
-	forms *repository.FormRepo
-	dir   string
+	forms    *repository.FormRepo
+	dir      string
+	limitDir int64 // total bytes allowed in dir (<=0 = unlimited)
 }
 
-func NewAssetHandler(forms *repository.FormRepo, dir string) *AssetHandler {
-	return &AssetHandler{forms: forms, dir: dir}
+func NewAssetHandler(forms *repository.FormRepo, dir string, limitDir int64) *AssetHandler {
+	return &AssetHandler{forms: forms, dir: dir, limitDir: limitDir}
 }
 
 // Upload accepts a multipart image ("file") for an owned form and returns a
@@ -75,6 +77,20 @@ func (h *AssetHandler) Upload(c *gin.Context) {
 		return
 	}
 
+	// Enforce the total-storage budget for this stage.
+	if h.limitDir > 0 {
+		used, err := dirSize(h.dir)
+		if err != nil {
+			handleServiceError(c, err, "measure upload dir")
+			return
+		}
+		if used+hdr.Size > h.limitDir {
+			response.Error(c, http.StatusInsufficientStorage, "STORAGE_FULL",
+				"storage is full — delete some images or contact the owner")
+			return
+		}
+	}
+
 	if err := os.MkdirAll(h.dir, 0o755); err != nil {
 		handleServiceError(c, err, "ensure upload dir")
 		return
@@ -98,4 +114,27 @@ func randomName() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// dirSize sums the bytes of every regular file under dir (0 if dir is absent).
+func dirSize(dir string) (int64, error) {
+	var total int64
+	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		total += info.Size()
+		return nil
+	})
+	if os.IsNotExist(err) {
+		return 0, nil
+	}
+	return total, err
 }

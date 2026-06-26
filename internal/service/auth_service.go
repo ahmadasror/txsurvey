@@ -25,6 +25,7 @@ var googleUserinfoURL = "https://openidconnect.googleapis.com/v1/userinfo"
 // testability — concrete impl is repository.UserRepo).
 type UserRepository interface {
 	UpsertByGoogleSub(ctx context.Context, p model.GoogleProfile) (*model.User, error)
+	UpsertByGoogleSubCapped(ctx context.Context, p model.GoogleProfile, maxUsers int) (*model.User, bool, error)
 	GetByID(ctx context.Context, id string) (*model.User, error)
 }
 
@@ -33,6 +34,7 @@ type AuthService struct {
 	oauthCfg *oauth2.Config
 	states   *stateStore
 	users    UserRepository
+	maxUsers int
 }
 
 func NewAuthService(cfg *config.Config, users UserRepository) *AuthService {
@@ -44,8 +46,9 @@ func NewAuthService(cfg *config.Config, users UserRepository) *AuthService {
 			Scopes:       []string{"openid", "email", "profile"},
 			Endpoint:     google.Endpoint,
 		},
-		states: newStateStore(10 * time.Minute),
-		users:  users,
+		states:   newStateStore(10 * time.Minute),
+		users:    users,
+		maxUsers: cfg.MaxUsers,
 	}
 }
 
@@ -85,9 +88,13 @@ func (s *AuthService) HandleCallback(ctx context.Context, state, code string) (*
 		return nil, apperror.New(http.StatusBadGateway, "OAUTH_PROFILE", "incomplete profile from Google")
 	}
 
-	user, err := s.users.UpsertByGoogleSub(ctx, *profile)
+	user, capped, err := s.users.UpsertByGoogleSubCapped(ctx, *profile, s.maxUsers)
 	if err != nil {
 		return nil, err
+	}
+	if capped {
+		return nil, apperror.New(http.StatusForbidden, "REGISTRATION_FULL",
+			"sign-ups are full for now — contact the owner")
 	}
 	return user, nil
 }

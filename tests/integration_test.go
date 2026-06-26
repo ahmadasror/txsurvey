@@ -93,7 +93,7 @@ func newHarness(t *testing.T) *harness {
 		Public:   handler.NewPublicHandler(service.NewResponseService(formRepo, questionRepo, responseRepo, logicRepo)),
 		Results:  handler.NewResultsHandler(service.NewResultsService(formRepo, questionRepo, responseRepo)),
 		Logic:    handler.NewLogicHandler(service.NewLogicService(formRepo, questionRepo, logicRepo)),
-		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir),
+		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir, cfg.StorageLimitBytes),
 	}
 	return &harness{t: t, pool: pool, engine: router.Setup(cfg, h, jwtMgr), jwt: jwtMgr, userID: userID}
 }

@@ -25,6 +25,9 @@ type fakeUserRepo struct {
 func (f *fakeUserRepo) UpsertByGoogleSub(_ context.Context, _ model.GoogleProfile) (*model.User, error) {
 	return f.user, nil
 }
+func (f *fakeUserRepo) UpsertByGoogleSubCapped(_ context.Context, _ model.GoogleProfile, _ int) (*model.User, bool, error) {
+	return f.user, false, nil
+}
 func (f *fakeUserRepo) GetByID(_ context.Context, id string) (*model.User, error) {
 	if f.user != nil && f.user.ID == id {
 		return f.user, nil

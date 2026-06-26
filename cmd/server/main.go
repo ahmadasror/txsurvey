@@ -71,7 +71,7 @@ func main() {
 		Public:   handler.NewPublicHandler(responseSvc),
 		Results:  handler.NewResultsHandler(resultsSvc),
 		Logic:    handler.NewLogicHandler(logicSvc),
-		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir),
+		Asset:    handler.NewAssetHandler(formRepo, cfg.UploadDir, cfg.StorageLimitBytes),
 	}
 
 	r := router.Setup(cfg, h, jwtMgr)

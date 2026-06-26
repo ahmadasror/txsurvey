@@ -38,6 +38,12 @@ type Config struct {
 	// UploadDir is where uploaded form assets (banner/logo) are stored and
 	// served from under /uploads.
 	UploadDir string
+
+	// Capacity caps for this stage. MaxUsers bounds the number of creator
+	// accounts (new Google sign-ins are refused past it; existing users always
+	// pass). StorageLimitBytes caps total uploaded-asset bytes on disk.
+	MaxUsers          int
+	StorageLimitBytes int64
 }
 
 // Load reads config from env and validates required fields.
@@ -56,6 +62,8 @@ func Load() (*Config, error) {
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
 		CORSAllowedOrigins: getCSV("CORS_ALLOWED_ORIGINS", []string{"http://localhost:5173"}),
 		UploadDir:          getEnv("UPLOAD_DIR", "uploads"),
+		MaxUsers:           getInt("MAX_USERS", 50),
+		StorageLimitBytes:  getInt64("STORAGE_LIMIT_BYTES", 1<<30), // 1 GiB
 	}
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL is required")
@@ -84,6 +92,24 @@ func getBool(key string, def bool) bool {
 	if v := os.Getenv(key); v != "" {
 		if b, err := strconv.ParseBool(v); err == nil {
 			return b
+		}
+	}
+	return def
+}
+
+func getInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
+func getInt64(key string, def int64) int64 {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return n
 		}
 	}
 	return def
