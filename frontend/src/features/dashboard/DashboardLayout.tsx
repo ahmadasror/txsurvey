@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,8 +62,18 @@ function NavItem({ to, end, children }: { to: string; end?: boolean; children: R
 }
 
 function Avatar({ user }: { user?: { name: string; email: string; picture_url: string } | null }) {
-  if (user?.picture_url) {
-    return <img src={user.picture_url} alt="" className="size-8 rounded-full border object-cover" />;
+  const [broken, setBroken] = useState(false);
+  if (user?.picture_url && !broken) {
+    return (
+      <img
+        src={user.picture_url}
+        alt=""
+        // Google's lh3 CDN rejects hot-linked requests that carry a referrer.
+        referrerPolicy="no-referrer"
+        onError={() => setBroken(true)}
+        className="size-8 rounded-full border object-cover"
+      />
+    );
   }
   const initial = (user?.name || user?.email || "?").trim().charAt(0).toUpperCase();
   return (

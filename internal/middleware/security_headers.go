@@ -12,7 +12,8 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"base-uri 'self'; " +
 	"object-src 'none'; " +
 	"frame-ancestors 'none'; " +
-	"img-src 'self' data:; " +
+	// Google profile photos (avatars) are served from *.googleusercontent.com.
+	"img-src 'self' data: https://*.googleusercontent.com; " +
 	"script-src 'self'; " +
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
 	"font-src 'self' https://fonts.gstatic.com; " +

@@ -79,7 +79,7 @@ export function LoginPage() {
           <BrandMark size={52} className="mb-6" />
           <h2 className="font-display text-[28px] leading-tight text-foreground">Masuk ke txsurvey</h2>
           <p className="mt-2 text-[15px] text-muted-foreground">
-            Lanjutkan dengan akun Google yang sudah diundang.
+            Masuk atau daftar dengan akun Google — gratis.
           </p>
 
           <button
@@ -100,12 +100,12 @@ export function LoginPage() {
 
           <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            akun yang diundang
+            gratis & cepat
             <span className="h-px flex-1 bg-border" />
           </div>
 
           <div className="rounded-xl bg-primary-soft px-4 py-3 text-[13.5px] text-primary">
-            Mode uji — hanya akun yang diundang yang bisa masuk. Hubungi pemilik survei untuk diundang.
+            Gratis untuk tim kecil. Kuota pendaftaran terbatas untuk tahap ini.
           </div>
 
           <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
