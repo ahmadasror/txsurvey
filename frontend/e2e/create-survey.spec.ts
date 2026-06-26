@@ -32,15 +32,25 @@ test.describe("create-survey regression (t0)", () => {
     await page.getByRole("button", { name: /Tambah pertanyaan/ }).click();
     await page.getByRole("menuitem", { name: "Teks singkat" }).click();
 
-    const qTitle = "Apa kabarmu hari ini?";
+    // A long title to exercise wrapping / the mobile no-overflow guard below.
+    const qTitle = "Seberapa puas kamu dengan proses onboarding dan dukungan tim selama minggu pertama bekerja di sini?";
     const titleField = page.getByPlaceholder("Tulis pertanyaan…");
     await expect(titleField).toBeVisible();
     await titleField.fill(qTitle);
     await page.getByRole("button", { name: "Simpan" }).click();
     await expect(page.getByText(qTitle)).toBeVisible(); // appears in the question list
 
+    // Regression guard: on a phone viewport the builder must wrap (not scroll
+    // horizontally) even with a long question title.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, "builder must not scroll horizontally on mobile").toBeLessThanOrEqual(1);
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // 5. Publish.
-    await page.getByRole("button", { name: "Publish" }).click();
+    await page.getByRole("button", { name: "Terbitkan" }).click();
     await expect(page.getByText("published")).toBeVisible();
 
     // 6. Resolve the public slug via the API, then run the survey as a respondent.

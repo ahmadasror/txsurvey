@@ -56,7 +56,7 @@ export function DesignDialog({
           <DialogDescription>Atur tampilan survei untuk responden.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[300px_1fr]">
           {/* Live welcome preview */}
           <div className="md:sticky md:top-0 md:self-start">
             <Label className="label-eyebrow mb-2 block text-muted-foreground">Pratinjau</Label>

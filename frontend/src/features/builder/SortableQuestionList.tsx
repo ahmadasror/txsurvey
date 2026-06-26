@@ -76,29 +76,29 @@ function Row({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-2 rounded-xl border bg-card p-2 text-sm transition-colors",
+        "flex items-start gap-2 rounded-xl border bg-card p-2 text-sm transition-colors",
         selected ? "border-primary bg-primary-soft" : "hover:border-primary/40",
         isDragging && "opacity-60",
       )}
     >
       <button
-        className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+        className="mt-0.5 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
-        aria-label="Drag to reorder"
+        aria-label="Geser untuk mengurutkan"
       >
         <GripVertical className="size-4" />
       </button>
       <span
         className={cn(
-          "grid size-6 shrink-0 place-items-center rounded-lg border text-xs font-semibold tabular-nums",
+          "mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border text-xs font-semibold tabular-nums",
           selected ? "border-primary bg-primary text-primary-foreground" : "border-input text-muted-foreground",
         )}
       >
         {index + 1}
       </span>
       <button className="flex min-w-0 flex-1 flex-col items-start text-left" onClick={onSelect}>
-        <span className="truncate font-medium text-foreground">
+        <span className="break-words font-medium text-foreground">
           {question.title || <span className="text-muted-foreground">Tanpa judul</span>}
         </span>
         <span className="text-xs text-muted-foreground">

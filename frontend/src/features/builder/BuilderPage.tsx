@@ -104,7 +104,7 @@ export function BuilderPage() {
       {/* Builder header */}
       <div className="border-b bg-card">
         <div className="container flex flex-wrap items-center gap-3 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Back">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Kembali">
             <ArrowLeft />
           </Button>
           <Input
@@ -118,27 +118,27 @@ export function BuilderPage() {
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {isPublished && (
               <Button variant="outline" size="sm" onClick={copyLink}>
-                {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Share link"}
+                {copied ? <Check /> : <Copy />} {copied ? "Tersalin" : "Bagikan"}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setThemeOpen(true)}>
-              <Palette /> Design
+              <Palette /> Desain
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/forms/${id}/results`}>
-                <BarChart3 /> Results
+                <BarChart3 /> Hasil
               </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.open(runnerPath(form.slug), "_blank")}>
-              <Eye /> Preview
+              <Eye /> Pratinjau
             </Button>
             {isPublished ? (
               <Button variant="secondary" size="sm" onClick={() => publish.mutate(false)} disabled={publish.isPending}>
-                <Undo2 /> Unpublish
+                <Undo2 /> Tarik
               </Button>
             ) : (
               <Button size="sm" onClick={() => publish.mutate(true)} disabled={publish.isPending}>
-                {publish.isPending ? <Loader2 className="animate-spin" /> : <Send />} Publish
+                {publish.isPending ? <Loader2 className="animate-spin" /> : <Send />} Terbitkan
               </Button>
             )}
           </div>
@@ -160,15 +160,17 @@ export function BuilderPage() {
                 mobilePane === pane ? "bg-background shadow-sm" : "text-muted-foreground",
               )}
             >
-              {pane === "list" ? `Questions${questions.length ? ` (${questions.length})` : ""}` : "Editor"}
+              {pane === "list" ? `Pertanyaan${questions.length ? ` (${questions.length})` : ""}` : "Editor"}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Builder body */}
-      <main className="container grid gap-[22px] py-6 md:grid-cols-[17.5rem_1fr]">
-        <aside className={cn("space-y-3", mobilePane === "editor" && "hidden md:block")}>
+      {/* Builder body. grid-cols-1 (= minmax(0,1fr)) keeps the single mobile
+          column bounded to the viewport so long question titles wrap instead of
+          forcing horizontal scroll. */}
+      <main className="container grid grid-cols-1 gap-[22px] py-6 md:grid-cols-[17.5rem_1fr]">
+        <aside className={cn("min-w-0 space-y-3", mobilePane === "editor" && "hidden md:block")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between rounded-xl bg-card" disabled={addQuestion.isPending}>

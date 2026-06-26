@@ -130,7 +130,7 @@ export function TemplatesPage() {
 
       {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {TEMPLATES.map((t) => {
           const Icon = t.icon;
           const swatch = presetById(t.theme)?.swatch;
