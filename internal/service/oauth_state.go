@@ -20,6 +20,10 @@ type stateEntry struct {
 	expiresAt time.Time
 }
 
+// maxStates hard-caps the store so a flood of /auth/google/login calls can't
+// grow it without bound (in addition to the per-IP rate limit on that route).
+const maxStates = 10000
+
 func newStateStore(ttl time.Duration) *stateStore {
 	return &stateStore{m: make(map[string]stateEntry), ttl: ttl}
 }
@@ -33,6 +37,18 @@ func (s *stateStore) put(state, verifier string) {
 		if now.After(e.expiresAt) {
 			delete(s.m, k)
 		}
+	}
+	// Hard cap: if still over budget after pruning expired entries, evict the
+	// soonest-to-expire ones to make room (bounded extra work).
+	for len(s.m) >= maxStates {
+		var oldestKey string
+		var oldest time.Time
+		for k, e := range s.m {
+			if oldestKey == "" || e.expiresAt.Before(oldest) {
+				oldestKey, oldest = k, e.expiresAt
+			}
+		}
+		delete(s.m, oldestKey)
 	}
 	s.m[state] = stateEntry{verifier: verifier, expiresAt: now.Add(s.ttl)}
 }

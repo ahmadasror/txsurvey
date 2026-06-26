@@ -19,14 +19,16 @@ import (
 func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) {
 	api := r.Group("/api/v1")
 
-	// Public auth endpoints (browser-driven OAuth handshake).
-	api.GET("/auth/google/login", h.Auth.GoogleLogin)
-	api.GET("/auth/google/callback", h.Auth.GoogleCallback)
+	// Public auth endpoints (browser-driven OAuth handshake), rate-limited per IP
+	// to bound state-store flooding and callback hammering by anonymous clients.
+	authLimit := middleware.RateLimit(20, time.Minute)
+	api.GET("/auth/google/login", authLimit, h.Auth.GoogleLogin)
+	api.GET("/auth/google/callback", authLimit, h.Auth.GoogleCallback)
 
 	// Dev/E2E-only password-less login. Mounted only outside production so it is
 	// physically absent from the live router (the handler also re-checks env).
 	if cfg.Env != "production" {
-		api.POST("/auth/dev-login", h.Auth.DevLogin)
+		api.POST("/auth/dev-login", authLimit, h.Auth.DevLogin)
 	}
 
 	// Public runner endpoints (anonymous, rate-limited per IP). Submissions get

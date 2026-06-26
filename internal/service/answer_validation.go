@@ -13,6 +13,11 @@ import (
 
 var emailRe = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
+// maxAnswerRunes is a hard server-side ceiling on free-text answers, enforced
+// even when a question sets no (or a larger) MaxLength — bounds storage/memory
+// against an unbounded-text submission.
+const maxAnswerRunes = 10000
+
 func answerErr(msg string) error {
 	return apperror.New(http.StatusUnprocessableEntity, "INVALID_ANSWER", msg)
 }
@@ -36,7 +41,8 @@ func validateAnswer(q model.Question, raw json.RawMessage) (json.RawMessage, boo
 		if s == "" {
 			return nil, true, nil
 		}
-		if q.Metadata.MaxLength > 0 && len([]rune(s)) > q.Metadata.MaxLength {
+		n := len([]rune(s))
+		if n > maxAnswerRunes || (q.Metadata.MaxLength > 0 && n > q.Metadata.MaxLength) {
 			return nil, false, answerErr("answer exceeds the maximum length")
 		}
 		return mustJSON(s), false, nil

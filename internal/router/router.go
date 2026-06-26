@@ -45,6 +45,9 @@ func Setup(cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) *gin.Engine
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
 	r.Use(middleware.RequestLogger())
+	// Defensive headers on every response (CSP, nosniff, frame-ancestors, …).
+	// HSTS only in production, where traffic is HTTPS (behind nginx/Cloudflare).
+	r.Use(middleware.SecurityHeaders(cfg.Env == "production"))
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.CORSAllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/ahmadasror/txsurvey/internal/dto"
@@ -10,6 +12,11 @@ import (
 	"github.com/ahmadasror/txsurvey/internal/repository"
 	"github.com/ahmadasror/txsurvey/pkg/apperror"
 )
+
+// assetURLRe matches the relative asset path the upload endpoint hands back
+// ("uploads/<random>.<ext>"). Banner/logo settings must be either empty or this
+// exact shape — never an arbitrary URL (open-redirect / SSRF / stored-XSS risk).
+var assetURLRe = regexp.MustCompile(`^uploads/[A-Za-z0-9._-]+$`)
 
 // FormService owns the form lifecycle: creation (with unique slug), editing,
 // publish/unpublish (with validation), and detail assembly.
@@ -76,6 +83,9 @@ func (s *FormService) List(ctx context.Context, ownerID string, page, perPage in
 
 // Update edits a form's title/description/settings.
 func (s *FormService) Update(ctx context.Context, ownerID, id string, req dto.UpdateFormRequest) (*model.Form, error) {
+	if err := validateFormSettings(req.Settings); err != nil {
+		return nil, err
+	}
 	form, err := s.forms.UpdateMeta(ctx, ownerID, id, req.Title, req.Description, req.Settings)
 	if err != nil {
 		return nil, err
@@ -168,6 +178,26 @@ func (s *FormService) uniqueSlug(ctx context.Context, title string) (string, err
 		}
 	}
 	return "", apperror.New(http.StatusInternalServerError, "SLUG_ALLOC", "could not allocate a unique slug")
+}
+
+// validateFormSettings guards the URL-bearing settings fields. RedirectURL must
+// be a real http(s) URL (no javascript:/data: — open-redirect/XSS); banner/logo
+// must be the relative asset path our own upload produces.
+func validateFormSettings(s model.FormSettings) error {
+	if s.RedirectURL != "" {
+		u, err := url.Parse(s.RedirectURL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+			return apperror.New(http.StatusUnprocessableEntity, "BAD_REDIRECT_URL",
+				"redirect URL must be an http(s) URL")
+		}
+	}
+	for _, v := range []string{s.BannerURL, s.LogoURL} {
+		if v != "" && !assetURLRe.MatchString(v) {
+			return apperror.New(http.StatusUnprocessableEntity, "BAD_ASSET_URL",
+				"banner/logo must be an uploaded asset path")
+		}
+	}
+	return nil
 }
 
 func answerableCount(questions []model.Question) int {

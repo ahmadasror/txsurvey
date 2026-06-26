@@ -222,7 +222,7 @@ func (s *ResultsService) ExportCSV(ctx context.Context, ownerID, formID string, 
 		if title == "" {
 			title = "(untitled)"
 		}
-		header = append(header, title)
+		header = append(header, csvSafe(title))
 	}
 	if err := w.Write(header); err != nil {
 		return "", err
@@ -235,7 +235,7 @@ func (s *ResultsService) ExportCSV(ctx context.Context, ownerID, formID string, 
 		}
 		row := []string{resp.ID, resp.SubmittedAt.UTC().Format(time.RFC3339)}
 		for _, q := range answerable {
-			row = append(row, formatAnswer(q, byQuestion[q.ID]))
+			row = append(row, csvSafe(formatAnswer(q, byQuestion[q.ID])))
 		}
 		if err := w.Write(row); err != nil {
 			return "", err
@@ -246,6 +246,21 @@ func (s *ResultsService) ExportCSV(ctx context.Context, ownerID, formID string, 
 		return "", err
 	}
 	return form.Slug + "-responses.csv", nil
+}
+
+// csvSafe neutralises CSV formula injection: a cell whose first character is a
+// formula trigger (=, +, -, @, tab, CR) is prefixed with a single quote so
+// spreadsheet apps treat it as literal text, not a live formula. Respondent
+// answers and creator-set titles are untrusted input that lands in the export.
+func csvSafe(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	}
+	return s
 }
 
 // formatAnswer renders an answer value as a human-readable CSV cell.

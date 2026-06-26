@@ -53,8 +53,12 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	c.Redirect(http.StatusFound, h.cfg.AppBaseURL)
 }
 
-// Logout clears the session cookie.
+// Logout revokes the current session token (so it can't be replayed even if it
+// was captured) and clears the cookie.
 func (h *AuthHandler) Logout(c *gin.Context) {
+	if raw, err := c.Cookie(middleware.SessionCookieName); err == nil && raw != "" {
+		h.jwt.RevokeToken(raw)
+	}
 	h.setSessionCookie(c, "", -1)
 	response.OK(c, nil, "logged out")
 }

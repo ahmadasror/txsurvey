@@ -37,3 +37,22 @@ func TestJWTManager_RejectsExpired(t *testing.T) {
 		t.Fatal("expected expired token to be rejected")
 	}
 }
+
+func TestJWTManager_RevokeInvalidatesToken(t *testing.T) {
+	m := NewJWTManager("test-secret-at-least-32-characters-long!!", time.Hour)
+	tok, _ := m.GenerateSessionToken("user-1", "a@b.com", "Alice")
+
+	if _, err := m.ValidateSessionToken(tok); err != nil {
+		t.Fatalf("token should be valid before revoke: %v", err)
+	}
+	m.RevokeToken(tok)
+	if _, err := m.ValidateSessionToken(tok); err == nil {
+		t.Fatal("expected revoked token to be rejected")
+	}
+
+	// A freshly minted token (different jti) is unaffected by the revocation.
+	tok2, _ := m.GenerateSessionToken("user-1", "a@b.com", "Alice")
+	if _, err := m.ValidateSessionToken(tok2); err != nil {
+		t.Fatalf("a new token must remain valid after revoking another: %v", err)
+	}
+}

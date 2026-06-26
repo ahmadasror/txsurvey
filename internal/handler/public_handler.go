@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ahmadasror/txsurvey/internal/dto"
@@ -8,6 +10,10 @@ import (
 	"github.com/ahmadasror/txsurvey/internal/service"
 	"github.com/ahmadasror/txsurvey/pkg/response"
 )
+
+// maxSubmitBytes caps an anonymous submission body — generous for any real
+// survey, but bounds memory against a hostile oversized payload.
+const maxSubmitBytes = 256 << 10 // 256 KiB
 
 // PublicHandler exposes the anonymous runner endpoints (no auth).
 type PublicHandler struct {
@@ -30,6 +36,7 @@ func (h *PublicHandler) GetForm(c *gin.Context) {
 
 // Submit validates and stores a completed submission.
 func (h *PublicHandler) Submit(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxSubmitBytes)
 	req, ok := bindJSON[dto.SubmitResponseRequest](c)
 	if !ok {
 		return

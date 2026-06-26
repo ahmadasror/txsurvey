@@ -16,11 +16,13 @@ import (
 
 const maxUploadBytes = 2 << 20 // 2 MiB
 
+// allowedImageTypes maps a sniffed MIME type (http.DetectContentType) to a file
+// extension. GIF is intentionally excluded — it is a classic polyglot/XSS
+// vector and unnecessary for a banner/logo.
 var allowedImageTypes = map[string]string{
 	"image/png":  ".png",
 	"image/jpeg": ".jpg",
 	"image/webp": ".webp",
-	"image/gif":  ".gif",
 }
 
 // AssetHandler stores and serves uploaded form assets (banner/logo).
@@ -53,10 +55,23 @@ func (h *AssetHandler) Upload(c *gin.Context) {
 		return
 	}
 	defer file.Close()
+	_ = hdr // the multipart Content-Type header is attacker-controlled; ignored.
 
-	ext, ok := allowedImageTypes[hdr.Header.Get("Content-Type")]
+	// Determine the real type from the file's magic bytes, not the client's
+	// declared Content-Type (which can lie). DetectContentType reads <=512 bytes.
+	sniff := make([]byte, 512)
+	n, err := io.ReadFull(file, sniff)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		handleServiceError(c, err, "read upload")
+		return
+	}
+	ext, ok := allowedImageTypes[http.DetectContentType(sniff[:n])]
 	if !ok {
-		response.Error(c, http.StatusUnprocessableEntity, "BAD_IMAGE", "only PNG, JPEG, WEBP or GIF images are allowed")
+		response.Error(c, http.StatusUnprocessableEntity, "BAD_IMAGE", "only PNG, JPEG or WEBP images are allowed")
+		return
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		handleServiceError(c, err, "rewind upload")
 		return
 	}
 
