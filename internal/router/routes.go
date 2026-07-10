@@ -70,6 +70,7 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 
 	// Results: responses, analytics, CSV export.
 	authed.GET("/forms/:id/responses", h.Results.ListResponses)
+	authed.DELETE("/forms/:id/responses", h.Results.DeleteResponses)
 	authed.GET("/forms/:id/responses/:rid", h.Results.GetResponse)
 	authed.GET("/forms/:id/analytics", h.Results.Analytics)
 	authed.GET("/forms/:id/export.csv", h.Results.ExportCSV)

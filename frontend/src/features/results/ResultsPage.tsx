@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Pencil } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { cn } from "@/lib/utils";
 import { formatAnswer } from "@/lib/formatAnswer";
 import { themeStyle } from "@/lib/themes";
 import { useForm } from "@/api/forms";
-import { csvUrl, useAnalytics, useResponses } from "@/api/results";
+import { csvUrl, useAnalytics, useDeleteResponses, useResponses } from "@/api/results";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import type { AnswerValue, FormAnalytics, Question, ResponseItem } from "@/types/forms";
 
@@ -18,9 +19,13 @@ export function ResultsPage() {
   useDocumentTitle("Hasil", form?.title);
   const analytics = useAnalytics(id);
   const responses = useResponses(id);
+  const deleteResponses = useDeleteResponses(id);
   const [tab, setTab] = useState<"summary" | "responses">("summary");
+  const [confirmClear, setConfirmClear] = useState(false);
 
   if (isLoading || !form) return <FullScreenLoader />;
+
+  const responseCount = analytics.data?.response_count ?? 0;
 
   return (
     <div style={themeStyle(form.settings.theme, form.settings.font)} className="font-sans min-h-dvh bg-background">
@@ -43,6 +48,17 @@ export function ResultsPage() {
                 <Pencil /> Edit
               </Link>
             </Button>
+            {responseCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg text-destructive hover:text-destructive"
+                onClick={() => setConfirmClear(true)}
+                disabled={deleteResponses.isPending}
+              >
+                {deleteResponses.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />} Hapus data
+              </Button>
+            )}
             <Button size="sm" className="rounded-lg" asChild>
               <a href={csvUrl(id)} download>
                 <Download /> Unduh CSV
@@ -77,6 +93,20 @@ export function ResultsPage() {
           <EmptyState />
         )}
       </main>
+
+      <ConfirmDialog
+        open={confirmClear}
+        onOpenChange={setConfirmClear}
+        title="Hapus semua data respons?"
+        description={`${responseCount} respons beserta jawabannya akan dihapus permanen. Pertanyaan dan pengaturan survei tetap utuh. Tindakan ini tidak bisa dibatalkan.`}
+        confirmText="Hapus data"
+        cancelText="Batal"
+        destructive
+        onConfirm={() => {
+          deleteResponses.mutate();
+          setConfirmClear(false);
+        }}
+      />
     </div>
   );
 }

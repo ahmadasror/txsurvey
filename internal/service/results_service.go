@@ -65,6 +65,18 @@ func (s *ResultsService) GetResponse(ctx context.Context, ownerID, formID, respo
 	return resp, nil
 }
 
+// DeleteResponses removes all responses (and their answers) of an owned form,
+// returning how many were deleted. The form itself and its questions are kept —
+// this only clears collected result data.
+func (s *ResultsService) DeleteResponses(ctx context.Context, ownerID, formID string) (int, error) {
+	if _, err := s.requireForm(ctx, ownerID, formID); err != nil {
+		return 0, err
+	}
+	// audit:skip — txsurvey has no audit bus; destructive action is gated by a UI
+	// confirm and ownership check (owner_id scoping in requireForm).
+	return s.responses.DeleteByForm(ctx, formID)
+}
+
 // Analytics aggregates per-question summaries plus response/completion totals.
 func (s *ResultsService) Analytics(ctx context.Context, ownerID, formID string) (*model.FormAnalytics, error) {
 	if _, err := s.requireForm(ctx, ownerID, formID); err != nil {

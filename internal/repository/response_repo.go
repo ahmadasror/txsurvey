@@ -77,6 +77,16 @@ func (r *ResponseRepo) CompletedCountByForm(ctx context.Context, formID string) 
 	return n, nil
 }
 
+// DeleteByForm removes every response of a form (answers cascade via FK) and
+// returns how many were deleted.
+func (r *ResponseRepo) DeleteByForm(ctx context.Context, formID string) (int, error) {
+	tag, err := r.pool.Exec(ctx, `DELETE FROM responses WHERE form_id = $1`, formID)
+	if err != nil {
+		return 0, fmt.Errorf("delete responses: %w", err)
+	}
+	return int(tag.RowsAffected()), nil
+}
+
 // ListByForm returns a page of responses (newest first) with their answers
 // attached, plus the total count.
 func (r *ResponseRepo) ListByForm(ctx context.Context, formID string, limit, offset int) ([]model.Response, int, error) {

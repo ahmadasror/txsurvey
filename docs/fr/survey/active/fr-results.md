@@ -30,6 +30,14 @@ per-question analytics, and CSV export. Ownership-scoped. No writes.
 ### FR-RES-003 — CSV export
 - AC-003-1: `GET /forms/:id/export.csv` streams `text/csv` (one column per answerable question; option ids resolved to labels); `Content-Disposition: attachment`.
 
+### FR-RES-004 — Clear collected responses
+**Code**: `internal/handler/results_handler.go`, `internal/service/results_service.go`, `internal/repository/response_repo.go`
+
+- AC-004-1: `DELETE /forms/:id/responses` deletes every response of an owned form (answers cascade via FK); returns `{deleted: <count>}`.
+- AC-004-2: the form and its questions/logic are untouched — only result data is cleared.
+- AC-004-3: non-owner / absent form → 404 `FORM_NOT_FOUND`.
+- AC-004-4: SPA guards the action behind a confirm dialog (not an immediate submit).
+
 ---
 
 ## 3. API Surface
@@ -37,6 +45,7 @@ per-question analytics, and CSV export. Ownership-scoped. No writes.
 | Method | Path | Auth |
 |---|---|---|
 | GET | `/api/v1/forms/:id/responses` | session |
+| DELETE | `/api/v1/forms/:id/responses` | session |
 | GET | `/api/v1/forms/:id/responses/:rid` | session |
 | GET | `/api/v1/forms/:id/analytics` | session |
 | GET | `/api/v1/forms/:id/export.csv` | session |
@@ -47,8 +56,8 @@ per-question analytics, and CSV export. Ownership-scoped. No writes.
 
 | Table | Read | Write | Notes |
 |---|:---:|:---:|---|
-| `responses` | ✓ | — | read-only |
-| `answers` | ✓ | — | aggregated in Go |
+| `responses` | ✓ | ✓ | read-only except FR-RES-004 clear (DELETE) |
+| `answers` | ✓ | ✓ | aggregated in Go; cascade-deleted on clear |
 
 ---
 
@@ -69,10 +78,15 @@ covers:
   - FR-RES-001
   - FR-RES-002
   - FR-RES-003
+  - FR-RES-004
 
 endpoints:
   - id: AC-RES-LIST
     method: GET
+    path: /api/v1/forms/{id}/responses
+    auth: { mode: session }
+  - id: AC-RES-CLEAR
+    method: DELETE
     path: /api/v1/forms/{id}/responses
     auth: { mode: session }
   - id: AC-RES-GET

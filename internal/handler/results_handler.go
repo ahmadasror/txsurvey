@@ -47,6 +47,17 @@ func (h *ResultsHandler) GetResponse(c *gin.Context) {
 	response.OK(c, resp, "ok")
 }
 
+// DeleteResponses clears all collected responses for a form (keeps the form and
+// its questions). Destructive — the SPA guards it behind a confirm dialog.
+func (h *ResultsHandler) DeleteResponses(c *gin.Context) {
+	deleted, err := h.svc.DeleteResponses(c.Request.Context(), userID(c), c.Param("id"))
+	if err != nil {
+		handleServiceError(c, err, "delete responses")
+		return
+	}
+	response.OK(c, gin.H{"deleted": deleted}, "responses deleted")
+}
+
 func (h *ResultsHandler) Analytics(c *gin.Context) {
 	a, err := h.svc.Analytics(c.Request.Context(), userID(c), c.Param("id"))
 	if err != nil {
