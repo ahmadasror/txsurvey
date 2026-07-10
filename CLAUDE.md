@@ -20,6 +20,9 @@ docker compose up -d postgres   # just the DB for local `make run`
 ```
 
 Run a single Go test: `go test ./internal/service/ -run TestReachablePath -v`.
+Integration tests (`tests/`) TRUNCATE, so the harness **refuses any `DATABASE_URL` whose db
+name lacks `test`** — point it at a `*_test` DB (e.g. `…/txsurvey_test`); `make run`'s dev DB
+is `txsurvey`. The harness runs migrations itself before truncating.
 
 ## Lean SDD (spec-driven workflow)
 
@@ -60,6 +63,14 @@ and **public** (anonymous, rate-limited). Every form-scoped repo query carries
   submitted answers: `required` is enforced only on *reachable* questions, and an answer to a *skipped*
   question is rejected (anti-tamper). A "linear" form is just the no-rules case of the same code.
 
+- **Jumps are forward-only; `always` = unconditional jump.** `jump_to` may only target a *later* question,
+  enforced in BOTH `logic_service.go validateRule` (`target.Position > source.Position`, else 422
+  `INVALID_LOGIC_RULE`) and `LogicEditor.tsx` (target dropdown filtered to `position >
+  source.position`). The `always` operator (migration 006) matches even when the source is unanswered, so
+  `always` + `jump_to` routes straight to a chosen later question with no condition — the builder's **"Lompat
+  langsung"** button. Reordering questions can leave a rule pointing backward; the engine's visited-set + step
+  cap keep the runner safe, but such a rule can't be re-created/edited in the UI.
+
 - **Migrations are forward-only; numeric order == build order.** golang-migrate only applies versions greater
   than the current one, so a new migration must take the next number (don't back-fill a lower number after a
   higher one has run). They're embedded via `//go:embed migrations/*.sql` and run at boot.
@@ -90,6 +101,18 @@ and **public** (anonymous, rate-limited). Every form-scoped repo query carries
 - **Answer storage:** normalized `answers` rows (one per answered question) with a JSONB `value` leaf for the
   type-varying payload. Analytics are aggregated in Go (`ResultsService.computeSummary`), not via JSONB SQL.
 
+- **Slug lifecycle.** A form's slug is minted once at create from its (often placeholder — the UI defaults an
+  empty title to "Survei tanpa judul") title, so renaming later does NOT change the URL. While a form is a
+  **draft** the slug can be re-pointed via `PATCH /forms/:id {slug}` → `FormService.resolveSlug` (slugified,
+  must be unique among live forms), surfaced in the Design dialog's **"Tautan publik"** field. Once
+  **published the slug is frozen** (422 `SLUG_LOCKED`) so already-shared `/r/:slug` links keep working; a
+  taken slug is 422 `SLUG_TAKEN`. Slug uniqueness is a partial unique index (live rows only).
+
+- **Browser-tab titles** come from `useDocumentTitle(...parts)` (`lib/useDocumentTitle.ts`), called once per
+  page; it renders a `part · … · txsurvey` breadcrumb and drops falsy parts (so a still-loading form title
+  collapses to just `txsurvey`). Add a call when you add a page — `index.html`'s `<title>txsurvey</title>` is
+  only the pre-JS fallback.
+
 - **gofmt is enforced** (`make lint`). The module is `go 1.25` (the toolchain auto-upgraded on first tidy);
   the Dockerfile uses `golang:1.25-alpine`.
 
@@ -119,5 +142,7 @@ never commit it). Google OAuth redirect URIs / test users are Console-only and c
 
 Question types: extend the `question_type` enum (new migration), `model.QuestionType` consts +
 `validateQuestion` (metadata rules) + `validateAnswer` (per-type answer check) + the runner's `QuestionScreen`
-+ `lib/questionTypes.ts`. Logic operators: extend the enum, `model.LogicOperator`, `conditionMatches` in
-BOTH engines, and the builder's `LogicEditor` operator list.
++ `lib/questionTypes.ts`. Logic operators: extend the enum (new migration), `model.LogicOperator` + `ValidLogicOperator`,
+`conditionMatches` in BOTH engines, and the builder's `LogicEditor` operator list. An operator that takes no
+comparison value (like `is_empty` / `always`) must ALSO be excluded from `needsValue` in BOTH
+`logic_service.go validateRule` and `LogicEditor.tsx`, or it will 422 on "requires a comparison value".

@@ -105,7 +105,10 @@ cd frontend && npm run build  # typecheck + SPA build
 ```
 
 Integration/E2E tests (`tests/`) run the API in-process against Postgres and cover the
-happy path (create → publish → submit → analytics → CSV) and branching logic.
+happy path (create → publish → submit → analytics → CSV), branching logic (including the
+unconditional `always` jump), and slug editing. They **TRUNCATE**, so the harness refuses any
+`DATABASE_URL` whose db name lacks `test` — point it at a `*_test` DB, e.g.
+`DATABASE_URL=postgres://txsurvey:txsurvey@localhost:5432/txsurvey_test?sslmode=disable`.
 
 ## Architecture
 
