@@ -81,12 +81,26 @@ func (s *FormService) List(ctx context.Context, ownerID string, page, perPage in
 	return s.forms.ListByOwner(ctx, ownerID, perPage, (page-1)*perPage)
 }
 
-// Update edits a form's title/description/settings.
+// Update edits a form's title/description/settings, and optionally its slug
+// (public URL). The slug can only change while the form is a draft — once
+// published its URL is frozen so links already shared with respondents keep
+// working.
 func (s *FormService) Update(ctx context.Context, ownerID, id string, req dto.UpdateFormRequest) (*model.Form, error) {
 	if err := validateFormSettings(req.Settings); err != nil {
 		return nil, err
 	}
-	form, err := s.forms.UpdateMeta(ctx, ownerID, id, req.Title, req.Description, req.Settings)
+	current, err := s.forms.GetByIDOwned(ctx, id, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	if current == nil {
+		return nil, errFormNotFound
+	}
+	slug, err := s.resolveSlug(ctx, current, req.Slug)
+	if err != nil {
+		return nil, err
+	}
+	form, err := s.forms.UpdateMeta(ctx, ownerID, id, req.Title, req.Description, slug, req.Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +177,32 @@ func (s *FormService) attachQuestions(ctx context.Context, form *model.Form) err
 	}
 	form.Questions = questions
 	return nil
+}
+
+// resolveSlug decides the slug to persist on update. An empty or unchanged
+// requested slug keeps the current one. A changed slug is normalized, and is
+// only accepted when the form is still a draft and the target is free.
+func (s *FormService) resolveSlug(ctx context.Context, current *model.Form, requested string) (string, error) {
+	if requested == "" {
+		return current.Slug, nil
+	}
+	cand := slugify(requested)
+	if cand == current.Slug {
+		return current.Slug, nil
+	}
+	if current.Status == model.FormPublished {
+		return "", apperror.New(http.StatusUnprocessableEntity, "SLUG_LOCKED",
+			"the URL can only be changed while the form is a draft")
+	}
+	exists, err := s.forms.SlugExists(ctx, cand)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		return "", apperror.New(http.StatusUnprocessableEntity, "SLUG_TAKEN",
+			"that URL is already taken — pick another")
+	}
+	return cand, nil
 }
 
 func (s *FormService) uniqueSlug(ctx context.Context, title string) (string, error) {

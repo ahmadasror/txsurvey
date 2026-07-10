@@ -124,16 +124,16 @@ func (r *FormRepo) ListByOwner(ctx context.Context, ownerID string, limit, offse
 
 // UpdateMeta updates editable fields and returns the new row (nil when not
 // owned / absent).
-func (r *FormRepo) UpdateMeta(ctx context.Context, ownerID, id, title, description string, settings model.FormSettings) (*model.Form, error) {
+func (r *FormRepo) UpdateMeta(ctx context.Context, ownerID, id, title, description, slug string, settings model.FormSettings) (*model.Form, error) {
 	s, err := json.Marshal(settings)
 	if err != nil {
 		return nil, fmt.Errorf("encode settings: %w", err)
 	}
 	const q = `
-		UPDATE forms SET title = $3, description = $4, settings = $5, updated_at = now()
+		UPDATE forms SET title = $3, description = $4, slug = $5, settings = $6, updated_at = now()
 		WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL
 		RETURNING ` + formCols
-	f, err := scanForm(r.pool.QueryRow(ctx, q, id, ownerID, title, description, s))
+	f, err := scanForm(r.pool.QueryRow(ctx, q, id, ownerID, title, description, slug, s))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

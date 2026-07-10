@@ -381,6 +381,106 @@ func TestBranchingSubmission(t *testing.T) {
 	}
 }
 
+// TestUnconditionalJump exercises the 'always' operator (migration 006): an
+// unconditional jump routes q1 straight to q3, skipping q2 for every respondent
+// regardless of q1's answer — the "Lompat langsung" builder feature.
+func TestUnconditionalJump(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Direct"}, &form)
+
+	var q1, q2, q3 struct {
+		ID string `json:"id"`
+	}
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "First"}, &q1)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Skipped", "required": true}, &q2)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Last"}, &q3)
+
+	// Unconditional jump: from q1, always go to q3 (no compare_value).
+	rule := map[string]any{
+		"source_question_id": q1.ID,
+		"operator":           "always",
+		"action":             "jump_to",
+		"target_question_id": q3.ID,
+	}
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/logic", rule, nil); code != http.StatusCreated {
+		t.Fatalf("create always rule: want 201, got %d", code)
+	}
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+
+	submit := func(answers []map[string]any) int {
+		code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses",
+			map[string]any{"answers": answers}, nil)
+		return code
+	}
+
+	// q2 is skipped for everyone: answering only q1 & q3 is valid even though q2 is required.
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": "hi"}, {"question_id": q3.ID, "value": "bye"}}); code != http.StatusCreated {
+		t.Fatalf("always-jump path: want 201, got %d", code)
+	}
+	// Answering the skipped q2 is rejected as unreachable.
+	if code := submit([]map[string]any{{"question_id": q1.ID, "value": "hi"}, {"question_id": q2.ID, "value": "sneaky"}}); code != http.StatusUnprocessableEntity {
+		t.Fatalf("answer to skipped question: want 422, got %d", code)
+	}
+}
+
+// TestSlugEdit exercises the custom-slug feature: a draft form's URL can be
+// retargeted, must stay unique, and is frozen once the form is published.
+func TestSlugEdit(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Draft One"}, &form)
+
+	// Draft: retarget the slug (normalized from a messy input).
+	var updated struct {
+		Slug string `json:"slug"`
+	}
+	if code := h.do(http.MethodPatch, "/api/v1/forms/"+form.ID,
+		map[string]any{"title": "Draft One", "slug": "Sprint Review!! Prospera"}, &updated); code != http.StatusOK {
+		t.Fatalf("edit slug: want 200, got %d", code)
+	}
+	if updated.Slug != "sprint-review-prospera" {
+		t.Fatalf("normalized slug = %q, want sprint-review-prospera", updated.Slug)
+	}
+
+	// A second form cannot claim the same slug.
+	var form2 struct {
+		ID string `json:"id"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Draft Two"}, &form2)
+	if code := h.do(http.MethodPatch, "/api/v1/forms/"+form2.ID,
+		map[string]any{"title": "Draft Two", "slug": "sprint-review-prospera"}, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("duplicate slug: want 422, got %d", code)
+	}
+
+	// Publish form one, then the slug is locked.
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Q"}, &struct {
+		ID string `json:"id"`
+	}{})
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+	if code := h.do(http.MethodPatch, "/api/v1/forms/"+form.ID,
+		map[string]any{"title": "Draft One", "slug": "yet-another-url"}, nil); code != http.StatusUnprocessableEntity {
+		t.Fatalf("locked slug: want 422, got %d", code)
+	}
+	// Unchanged slug on a published form is still fine (title-only edit).
+	if code := h.do(http.MethodPatch, "/api/v1/forms/"+form.ID,
+		map[string]any{"title": "Draft One Renamed", "slug": "sprint-review-prospera"}, nil); code != http.StatusOK {
+		t.Fatalf("published title edit: want 200, got %d", code)
+	}
+}
+
 func (h *harness) mustCreateQuestion(formID string, body map[string]any, out any) {
 	h.t.Helper()
 	if code := h.do(http.MethodPost, "/api/v1/forms/"+formID+"/questions", body, out); code != http.StatusCreated {

@@ -23,7 +23,8 @@ scoped `owner_id = $ AND deleted_at IS NULL`.
 
 - AC-001-1: `POST /forms` creates a draft form with a globally-unique slug.
 - AC-001-2: `GET /forms` lists the caller's forms (with question + response counts); `GET /forms/:id` returns nested questions + logic rules.
-- AC-001-3: `PATCH /forms/:id` edits title/description/settings; `DELETE /forms/:id` soft-deletes.
+- AC-001-3: `PATCH /forms/:id` edits title/description/settings, and optionally the slug (public URL); `DELETE /forms/:id` soft-deletes.
+- AC-001-6: a slug change is normalized (`slugify`) and accepted only while the form is a draft (published → 422 `SLUG_LOCKED`) and only if free among live forms (else 422 `SLUG_TAKEN`); an empty/unchanged slug keeps the current one.
 - AC-001-4: `POST /forms/:id/publish` requires ≥1 answerable question (else 422 `PUBLISH_EMPTY`); `POST /forms/:id/unpublish` returns it to draft.
 - AC-001-5: any form not owned by the caller → 404 `FORM_NOT_FOUND`.
 
@@ -39,6 +40,7 @@ scoped `owner_id = $ AND deleted_at IS NULL`.
 
 - AC-003-1: `GET/POST /forms/:id/logic` and `PATCH/DELETE /forms/:id/logic/:rid`.
 - AC-003-2: rule validation — source/target in form, no self-target, `jump_to` must be forward (`target.position > source.position`), `end_form` has no target (else 422 `INVALID_LOGIC_RULE`).
+- AC-003-3: operator `always` (migration 006) matches unconditionally (even when the source is unanswered) and needs no `compare_value`; paired with `jump_to` it is the unconditional "always jump to <later question>" route surfaced in the builder as "Lompat langsung". Forward-only still applies.
 
 ---
 

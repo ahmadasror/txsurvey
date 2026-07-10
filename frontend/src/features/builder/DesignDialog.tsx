@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowRight, Check, ImagePlus, Loader2 } from "lucide-react";
+import { ArrowRight, Check, ImagePlus, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +18,13 @@ import { BrandMark } from "@/components/BrandMark";
 import { cn } from "@/lib/utils";
 import { assetUrl } from "@/lib/paths";
 import { DEFAULT_FONT_ID, DEFAULT_THEME_ID, FONT_PRESETS, themeStyle } from "@/lib/themes";
+import { runnerUrl } from "@/lib/paths";
 import { useUpdateForm, useUploadAsset } from "@/api/forms";
 import type { Form, FormSettings } from "@/types/forms";
+
+/** cleanSlug mirrors the backend slugify enough for a live URL preview. */
+const cleanSlug = (v: string) =>
+  v.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-/, "");
 
 export function DesignDialog({
   form,
@@ -32,19 +37,30 @@ export function DesignDialog({
 }) {
   const update = useUpdateForm(form.id);
   const [s, setS] = useState<FormSettings>(form.settings);
+  const [slug, setSlug] = useState(form.slug);
   const [hoverTheme, setHoverTheme] = useState<string | null>(null);
+  const isDraft = form.status !== "published";
 
   useEffect(() => {
-    if (open) setS(form.settings);
-  }, [open, form.settings]);
+    if (open) {
+      setS(form.settings);
+      setSlug(form.slug);
+    }
+  }, [open, form.settings, form.slug]);
 
   const set = (patch: Partial<FormSettings>) => setS((prev) => ({ ...prev, ...patch }));
   const previewTheme = hoverTheme ?? s.theme?.preset ?? DEFAULT_THEME_ID;
   const fontId = s.font ?? DEFAULT_FONT_ID;
 
+  const slugChanged = isDraft && slug !== "" && slug !== form.slug;
   const save = () =>
     update.mutate(
-      { title: form.title, description: form.description, settings: s },
+      {
+        title: form.title,
+        description: form.description,
+        settings: s,
+        ...(slugChanged ? { slug } : {}),
+      },
       { onSuccess: () => onOpenChange(false) },
     );
 
@@ -72,6 +88,34 @@ export function DesignDialog({
 
           {/* Controls */}
           <div className="space-y-6">
+            <section className="space-y-2">
+              <Label className="label-eyebrow text-muted-foreground">Tautan publik (URL)</Label>
+              {isDraft ? (
+                <>
+                  <Input
+                    value={slug}
+                    onChange={(e) => setSlug(cleanSlug(e.target.value))}
+                    placeholder="mis. sprint-review-prospera"
+                  />
+                  <p className="break-all text-xs text-muted-foreground">{runnerUrl(slug || form.slug)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Hanya huruf kecil, angka, dan tanda hubung. Bisa diubah selama masih draft.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                    <Lock className="size-3.5 shrink-0" />
+                    <span className="break-all">{runnerUrl(form.slug)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    URL terkunci setelah terbit agar tautan yang sudah dibagikan tetap hidup. Tarik ke draft
+                    dulu untuk mengubahnya.
+                  </p>
+                </>
+              )}
+            </section>
+
             <section className="space-y-3">
               <Label className="label-eyebrow text-muted-foreground">Tema</Label>
               <ThemePicker

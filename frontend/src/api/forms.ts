@@ -57,7 +57,7 @@ export function useUploadAsset(formId: string) {
 export function useUpdateForm(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { title: string; description: string; settings: Form["settings"] }) =>
+    mutationFn: (body: { title: string; description: string; settings: Form["settings"]; slug?: string }) =>
       api<Form>(`/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     onSuccess: (form) => {
       qc.setQueryData(formKey(id), form);
