@@ -1,0 +1,2 @@
+-- Forward-only: PostgreSQL cannot DROP a single enum value without recreating
+-- the logic_operator type and rewriting logic_rules.operator. No-op down.

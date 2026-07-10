@@ -130,7 +130,7 @@ func validateRule(in dto.LogicRuleInput, questions []model.Question) error {
 	if !model.ValidLogicAction(in.Action) {
 		return logicErr("unknown action")
 	}
-	needsValue := in.Operator != model.OpIsEmpty && in.Operator != model.OpIsNotEmpty
+	needsValue := in.Operator != model.OpIsEmpty && in.Operator != model.OpIsNotEmpty && in.Operator != model.OpAlways
 	if needsValue && len(in.CompareValue) == 0 {
 		return logicErr("this operator requires a comparison value")
 	}

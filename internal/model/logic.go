@@ -19,12 +19,15 @@ const (
 	OpNotContains LogicOperator = "not_contains"
 	OpIsEmpty     LogicOperator = "is_empty"
 	OpIsNotEmpty  LogicOperator = "is_not_empty"
+	// OpAlways matches unconditionally (even when the source is unanswered) — the
+	// building block for an unconditional "always jump to" route. Migration 006.
+	OpAlways LogicOperator = "always"
 )
 
 // ValidLogicOperator reports whether op is known.
 func ValidLogicOperator(op LogicOperator) bool {
 	switch op {
-	case OpEq, OpNeq, OpGt, OpGte, OpLt, OpLte, OpContains, OpNotContains, OpIsEmpty, OpIsNotEmpty:
+	case OpEq, OpNeq, OpGt, OpGte, OpLt, OpLte, OpContains, OpNotContains, OpIsEmpty, OpIsNotEmpty, OpAlways:
 		return true
 	}
 	return false

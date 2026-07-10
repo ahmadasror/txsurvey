@@ -54,6 +54,15 @@ func TestValidateRule(t *testing.T) {
 			in:   dto.LogicRuleInput{SourceQuestionID: "q1", Operator: model.OpIsEmpty, Action: model.ActionEndForm},
 		},
 		{
+			name: "always forward jump needs no compare value",
+			in:   dto.LogicRuleInput{SourceQuestionID: "q1", Operator: model.OpAlways, Action: model.ActionJumpTo, TargetQuestionID: strptr("q3")},
+		},
+		{
+			name:    "always backward jump still rejected",
+			in:      dto.LogicRuleInput{SourceQuestionID: "q3", Operator: model.OpAlways, Action: model.ActionJumpTo, TargetQuestionID: strptr("q1")},
+			wantErr: true,
+		},
+		{
 			name:    "eq needs compare value",
 			in:      dto.LogicRuleInput{SourceQuestionID: "q1", Operator: model.OpEq, Action: model.ActionEndForm},
 			wantErr: true,

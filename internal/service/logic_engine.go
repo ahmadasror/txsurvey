@@ -120,6 +120,8 @@ func anyMatch(rules []model.LogicRule, qByID map[string]model.Question, answers 
 func conditionMatches(answer json.RawMessage, op model.LogicOperator, compare json.RawMessage) bool {
 	empty := isJSONEmpty(answer)
 	switch op {
+	case model.OpAlways:
+		return true
 	case model.OpIsEmpty:
 		return empty
 	case model.OpIsNotEmpty:

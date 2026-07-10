@@ -15,6 +15,7 @@ const valueEqual = (a: unknown, b: unknown): boolean => {
 
 export function conditionMatches(answer: AnswerValue | undefined, op: LogicOperator, compare: unknown): boolean {
   const empty = isEmpty(answer);
+  if (op === "always") return true;
   if (op === "is_empty") return empty;
   if (op === "is_not_empty") return !empty;
   if (empty) return false;

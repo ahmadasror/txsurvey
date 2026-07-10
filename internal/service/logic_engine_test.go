@@ -79,6 +79,18 @@ func TestReachablePath(t *testing.T) {
 			want:    []string{"q1", "q2", "q3", "q4"},
 		},
 		{
+			name:    "always jump skips q2/q3 regardless of answer",
+			rules:   []model.LogicRule{rule("q1", model.OpAlways, "", model.ActionJumpTo, strptr("q4"), 0)},
+			answers: map[string]json.RawMessage{},
+			want:    []string{"q1", "q4"},
+		},
+		{
+			name:    "always jump fires even when source unanswered",
+			rules:   []model.LogicRule{rule("q2", model.OpAlways, "", model.ActionJumpTo, strptr("q4"), 0)},
+			answers: map[string]json.RawMessage{},
+			want:    []string{"q1", "q2", "q4"},
+		},
+		{
 			name: "first matching rule by priority wins",
 			rules: []model.LogicRule{
 				rule("q1", model.OpEq, "true", model.ActionJumpTo, strptr("q4"), 10),
@@ -119,6 +131,8 @@ func TestConditionMatches(t *testing.T) {
 		{"contains substring", r(`"hello world"`), model.OpContains, r(`"world"`), true},
 		{"is_empty on missing", nil, model.OpIsEmpty, nil, true},
 		{"is_not_empty on value", r(`"x"`), model.OpIsNotEmpty, nil, true},
+		{"always on value", r(`"x"`), model.OpAlways, nil, true},
+		{"always on missing", nil, model.OpAlways, nil, true},
 		{"unanswered eq is false", nil, model.OpEq, r(`"x"`), false},
 	}
 	for _, c := range cases {

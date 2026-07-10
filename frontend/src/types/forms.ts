@@ -52,7 +52,8 @@ export type LogicOperator =
   | "contains"
   | "not_contains"
   | "is_empty"
-  | "is_not_empty";
+  | "is_not_empty"
+  | "always";
 
 export type LogicAction = "jump_to" | "show" | "hide" | "end_form";
 
