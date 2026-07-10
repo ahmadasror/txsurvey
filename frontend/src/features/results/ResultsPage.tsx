@@ -9,11 +9,13 @@ import { formatAnswer } from "@/lib/formatAnswer";
 import { themeStyle } from "@/lib/themes";
 import { useForm } from "@/api/forms";
 import { csvUrl, useAnalytics, useResponses } from "@/api/results";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import type { AnswerValue, FormAnalytics, Question, ResponseItem } from "@/types/forms";
 
 export function ResultsPage() {
   const { id = "" } = useParams();
   const { data: form, isLoading } = useForm(id);
+  useDocumentTitle("Hasil", form?.title);
   const analytics = useAnalytics(id);
   const responses = useResponses(id);
   const [tab, setTab] = useState<"summary" | "responses">("summary");

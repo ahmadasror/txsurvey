@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { loginUrl } from "@/api/client";
 import { useMe } from "@/api/auth";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 const VALUE_PROPS = [
   "Satu pertanyaan per layar — terasa seperti ngobrol.",
@@ -14,6 +15,7 @@ const VALUE_PROPS = [
 ];
 
 export function LoginPage() {
+  useDocumentTitle("Masuk");
   const { data: user, isLoading } = useMe();
   const [connecting, setConnecting] = useState(false);
 

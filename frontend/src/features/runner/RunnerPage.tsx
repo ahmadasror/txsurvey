@@ -9,6 +9,7 @@ import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { themeStyle } from "@/lib/themes";
 import { assetUrl, homePath } from "@/lib/paths";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
@@ -23,6 +24,7 @@ const isEmpty = (v: AnswerValue | undefined): boolean =>
 export function RunnerPage() {
   const { slug = "" } = useParams();
   const { data: form, isLoading, isError } = usePublicForm(slug);
+  useDocumentTitle(form?.settings.welcome_title || form?.title);
   const submit = useSubmitResponse(slug);
 
   const [started, setStarted] = useState(false);

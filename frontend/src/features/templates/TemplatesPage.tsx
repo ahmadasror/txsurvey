@@ -6,6 +6,7 @@ import { api } from "@/api/client";
 import { presetById } from "@/lib/themes";
 import { typeLabel } from "@/lib/questionTypes";
 import { useCreateForm } from "@/api/forms";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import type { QuestionInput, QuestionType } from "@/types/forms";
 
 interface Template {
@@ -83,6 +84,7 @@ const TEMPLATES: Template[] = [
 const uniqueTypes = (qs: QuestionInput[]): QuestionType[] => [...new Set(qs.map((q) => q.type))];
 
 export function TemplatesPage() {
+  useDocumentTitle("Template");
   const navigate = useNavigate();
   const createForm = useCreateForm();
   const [busy, setBusy] = useState<string | null>(null);

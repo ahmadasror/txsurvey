@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/components/BrandMark";
 import { cn } from "@/lib/utils";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 const UPDATED = "25 Juni 2026";
 
@@ -78,6 +79,7 @@ const PRIVACY: Section[] = [
 
 export function LegalPage() {
   const [tab, setTab] = useState<"terms" | "privacy">("terms");
+  useDocumentTitle(tab === "terms" ? "Ketentuan Layanan" : "Kebijakan Privasi");
   const sections = tab === "terms" ? TERMS : PRIVACY;
 
   return (

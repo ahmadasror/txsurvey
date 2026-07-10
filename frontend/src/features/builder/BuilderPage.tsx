@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { themeStyle } from "@/lib/themes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import {
   useAddQuestion,
   useForm,
@@ -27,6 +28,7 @@ export function BuilderPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { data: form, isLoading, isError } = useForm(id);
+  useDocumentTitle(form?.title);
 
   const updateForm = useUpdateForm(id);
   const publish = usePublishForm(id);

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/api/client";
 import { DEFAULT_THEME_ID } from "@/lib/themes";
 import { useCreateForm, useDeleteForm, useForms } from "@/api/forms";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import type { FormListItem, FormStatus } from "@/types/forms";
 
 const statusLabel: Record<FormStatus, string> = {
@@ -45,6 +46,7 @@ function sevenBars(seed: string): number[] {
 }
 
 export function FormsListPage() {
+  useDocumentTitle("Surveimu");
   const navigate = useNavigate();
   const { data: forms, isLoading } = useForms();
   const createForm = useCreateForm();
