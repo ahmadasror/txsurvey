@@ -33,8 +33,19 @@ export function QuestionScreen({ question: q, value, onChange, onAdvance, step, 
 
       <h1 className="font-display mt-3 text-[27px] leading-[1.2] text-foreground sm:text-[32px]">
         {q.title || "Pertanyaan tanpa judul"}
-        {q.required && <span className="ml-1 text-brand">*</span>}
       </h1>
+      {q.type !== "statement" && (
+        <span
+          className={cn(
+            "mt-2.5 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            q.required
+              ? "bg-brand/10 text-brand"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {q.required ? "Wajib diisi" : "Opsional"}
+        </span>
+      )}
       {q.description && <p className="text-body mt-2.5 text-[15px] sm:text-base">{q.description}</p>}
 
       <div className="mt-7">
