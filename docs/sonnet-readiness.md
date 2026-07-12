@@ -162,9 +162,16 @@ for the model you're handing to: encapsulate, exemplify, or gate.
 | FR contract schema | `make spec-validate` | an FR contract block violates the schema | ✅ enforced |
 | Docs coherence | `make docs-check` | broken cross-link / ADR-index incoherence | ✅ enforced |
 | Route → FR (advisory) | `make spec-drift` | a route has no FR endpoint | ℹ️ advisory overview |
-| **Route → FR (enforcing)** | `make route-check` | a route has no FR endpoint and no waiver | ✅ **enforced (R1)** |
-| **Dual-engine parity** | `go test ./internal/service/ -run Parity` + `npm run test` | the two logic engines diverge on the shared fixture | ✅ **enforced (R1)** |
-| **Coverage ratchet** | `make cover-check` | a tracked package's coverage regresses below its floor | ✅ **enforced (R1)** |
-| **Frontend unit** | `make fe-test` / `npm run test` | a vitest (incl. parity) fails | ✅ **enforced (R1)** |
-| **Umbrella** | `make check` | any of lint/test/coverage/routes/docs/FE | ✅ **enforced (R1)** |
+| **Route → FR (enforcing)** | `make route-check` | a route has no FR endpoint and no waiver | 🟡 **R1 — exists & bites, local-only (not in CI)** |
+| **Dual-engine parity** | `go test ./internal/service/ -run Parity` + `npm run test` | the two logic engines diverge on the shared fixture | 🟡 **R1 — Go half in CI (`go test`); TS half local-only** |
+| **Coverage ratchet** | `make cover-check` | a tracked package's coverage regresses below its floor | 🟡 **R1 — exists & bites, local-only (not in CI)** |
+| **Frontend unit** | `make fe-test` / `npm run test` | a vitest (incl. parity) fails | 🟡 **R1 — local-only (not in CI)** |
+| **Umbrella** | `make check` | any of lint/test/coverage/routes/docs/FE | 🟡 **R1 — exists, not run by CI** |
 | **Post-deploy smoke** | `make verify-deploy` | container down / local `/health` / public edge fails | 🟡 **authored (R1), run manually** |
+
+> **Honesty note (independent validation).** A separate Opus evaluator flagged that these R1
+> gates are **local-only**: `.github/workflows/ci.yml` runs `make lint`, `go test -race`, FE
+> `build`, and Playwright — but **not** `make check`, `cover-check`, `route-check`, or vitest.
+> So the **TS half** of the parity gate isn't enforced on a PR (a runner-only divergence in
+> `logicEngine.ts` ships green). Wiring `make check` into CI is the top follow-up — it makes
+> the "enforced" claim true and is a discrete deterministic criterion in `readiness.yaml`.
