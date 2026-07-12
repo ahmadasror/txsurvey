@@ -1,0 +1,8 @@
+{
+  "_comment": "Coverage floors for the ratchet (scripts/cover_check.py). Baselines = state on the day the gate landed; the gate only catches NEW regressions. Raise a floor with `make cover-update`. Only DB-free unit-test packages are tracked so the gate runs without Postgres.",
+  "packages": {
+    "github.com/ahmadasror/txsurvey/internal/handler": 2.1,
+    "github.com/ahmadasror/txsurvey/internal/service": 35.1,
+    "github.com/ahmadasror/txsurvey/pkg/auth": 84.6
+  }
+}
