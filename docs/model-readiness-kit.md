@@ -105,4 +105,49 @@ No-theater skips (and why): ...
 Honest remaining scope: ...
 ```
 
-*This kit is itself just orientation. The value is the gates you build from it.*
+## Making the score deterministic (so two evaluators agree)
+
+A holistic 0–100 per dimension is **not reproducible**: two careful evaluators land
+10–17 points apart per dimension, and a matching *total* is just compensating averaging,
+not agreement. If you need a number you can trust across runs, repos, and evaluators,
+turn each dimension into **binary, outcome-phrased criteria** and let a script sum them.
+
+**The portability split (this is the whole trick):**
+
+| Layer | What | Where |
+|---|---|---|
+| **Generic** | the outcome-phrased criteria (+ points) and the scorer engine | this kit + `scripts/readiness_score.py` — copy to any repo |
+| **Per-repo** | how each criterion is verified: a `probe` (shell one-liner, exit 0 = met) or a `manual` met/not-met | `readiness.yaml` in the repo root — the only stack-specific file |
+
+Criteria name **outcomes, never tools** — "the top invariant has a check that fails on
+violation," not "a Go test named parity." So the same criterion is answered by
+`grep … ci.yml` in one repo and `grep … Jenkinsfile` in another; the engine and criteria
+don't change. Points across all criteria sum to 100; each dimension's criteria sum to its
+weight. Score = Σ met points — a pure function of the probe outcomes, so **same repo state →
+identical output** (the engine emits no timestamps/randomness; two runs or two agents match).
+
+**Run it:** `python3 scripts/readiness_score.py readiness.yaml` (or `make readiness-score`).
+It prints each criterion `[x]/[ ]`, per-dimension subtotals, the total, and — crucially — the
+**determinism boundary**: how many points are `probe` (machine-verified, reproducible) vs
+`manual` (the evaluator-dependent residue). Push the manual fraction down over time by
+mechanizing fuzzy criteria into probes.
+
+**Four honest limits — state them whenever you report a deterministic score:**
+1. **Judgment doesn't vanish; it relocates** to the one-time design of the criteria + weights.
+   That's a shared, reviewable decision, not re-litigated every evaluation.
+2. **Fuzzy dimensions keep a residue.** Navigation ("≤2 hops"), encapsulation quality — leave
+   these `manual` and report them as the variance surface, not as precision.
+3. **Deterministic ≠ valid.** A binary rubric can miss what a holistic read catches, and can be
+   gamed (a probe that always passes is theater — keep the probe output as the audit trail).
+   Always pair the number with one narrative read.
+4. **Binary tends to read higher than holistic** (existence earns full points), so add criteria
+   that split *existence* from *strength* where it matters — e.g. "gate exists" AND "gate runs
+   in CI" as two lines, so local-only enforcement is docked deterministically.
+
+A worked instance — the criteria, probes, and a filled `readiness.yaml` — ships alongside this
+kit in the txsurvey repo (`readiness.yaml` + `scripts/readiness_score.py`).
+
+---
+
+*This kit is itself just orientation. The value is the gates you build from it — and, if you
+want a number you can defend, a score that is computed from those gates rather than felt.*

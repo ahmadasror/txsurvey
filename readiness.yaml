@@ -1,0 +1,161 @@
+# readiness.yaml — per-repo evidence for the deterministic model-readiness scorer
+# (scripts/readiness_score.py). See docs/model-readiness-kit.md for the method.
+#
+# GENERIC part = the criteria `desc` (outcome-phrased, portable to any repo/lang).
+# PER-REPO part = each criterion's `probe` (shell one-liner, exit 0 = met) or a
+# `manual` met/not-met for genuinely fuzzy criteria. To score another repo, keep
+# the criteria + points, rewrite only the probes for that repo's stack.
+#
+# Points across all criteria sum to 100; each dimension's criteria sum to its weight.
+meta:
+  repo: txsurvey
+
+dimensions:
+  - id: encapsulation
+    name: Invariant encapsulation & local exemplars
+    weight: 25
+    criteria:
+      - id: invariants-encapsulated-or-exemplified
+        points: 7
+        desc: "top cross-cutting invariants are each encapsulated (unbypassable) or have an adjacent working exemplar"
+        manual: true
+        met: true
+        note: "theming via themeStyle, auth via SessionAuth middleware, answer/logic recipes have exemplars"
+      - id: top-invariant-has-runnable-exemplar
+        points: 6
+        desc: "the single most-critical invariant ships a runnable exemplar/fixture next to the edit site"
+        probe: "test -f internal/service/testdata/logic_parity_cases.json"
+      - id: extensible-concept-single-recipe
+        points: 6
+        desc: "adding a new instance of the core extensible concept follows one documented recipe, not scattered tribal knowledge"
+        manual: true
+        met: true
+        note: "CLAUDE.md 'Adding a question type or operator' enumerates the full chain"
+      - id: critical-invariant-single-source
+        points: 6
+        desc: "the most-critical invariant is single-source-of-truth, not duplicated across languages/modules kept in sync by convention"
+        manual: true
+        met: false
+        note: "logic engine is duplicated Go/TS (logic_engine.go + logicEngine.ts); parity gate mitigates but it is not single-source"
+
+  - id: gates
+    name: Machine-checkable enforcement (gates)
+    weight: 25
+    criteria:
+      - id: top-invariant-gated
+        points: 5
+        desc: "the top invariant has an automated check that fails on violation (both sides, if duplicated)"
+        probe: "test -f internal/service/logic_engine_parity_test.go && test -f frontend/src/lib/logicEngine.parity.test.ts"
+      - id: top-invariant-gate-in-ci
+        points: 6
+        desc: "that check runs in the merge-blocking CI pipeline (not local-only)"
+        probe: "grep -qE 'run test|vitest|make check' .github/workflows/ci.yml"
+      - id: regression-guard-exists
+        points: 4
+        desc: "new-code-path regression is guarded (coverage ratchet / mutation / equivalent)"
+        probe: "test -f scripts/cover_check.py && test -f scripts/coverage-baseline.json"
+      - id: regression-guard-in-ci
+        points: 4
+        desc: "that regression guard runs in CI"
+        probe: "grep -qE 'cover-check|make check' .github/workflows/ci.yml"
+      - id: contract-drift-hard-gate
+        points: 3
+        desc: "API/contract drift is a hard gate (new endpoint without a spec entry fails)"
+        probe: "test -f scripts/route_check.py"
+      - id: umbrella-command
+        points: 3
+        desc: "a single umbrella command runs all gates"
+        probe: "grep -q '^check:' Makefile"
+
+  - id: self-verification
+    name: Self-verification affordances
+    weight: 15
+    criteria:
+      - id: one-command-verify
+        points: 6
+        desc: "one command verifies a change (build + test + lint) deterministically"
+        probe: "grep -q '^check:' Makefile"
+      - id: hermetic-verify
+        points: 5
+        desc: "that command runs without external services (hermetic / no live DB), or a one-command throwaway harness exists"
+        probe: "grep -q 'go test ./... -short' Makefile"
+      - id: local-gate-equals-ci
+        points: 4
+        desc: "the local umbrella gate is the same one CI runs (no gap between local green and CI green)"
+        probe: "grep -qE 'make check' .github/workflows/ci.yml"
+
+  - id: definition-of-done
+    name: Definition-of-done clarity
+    weight: 10
+    criteria:
+      - id: dod-written
+        points: 4
+        desc: "definition-of-done is written down, not implicit"
+        manual: true
+        met: true
+        note: "Lean SDD 3 artifacts in CLAUDE.md + docs/sdd-workflow.md"
+      - id: dod-points-at-commands
+        points: 3
+        desc: "DoD points at runnable commands, not only prose"
+        probe: "grep -q 'make check' CLAUDE.md"
+      - id: dod-one-place
+        points: 3
+        desc: "DoD lives in one discoverable place"
+        manual: true
+        met: true
+        note: "CLAUDE.md Commands + Lean SDD section"
+
+  - id: navigation
+    name: Navigation / discoverability
+    weight: 10
+    criteria:
+      - id: entry-doc-orients
+        points: 4
+        desc: "an entry doc orients where things live (find any subsystem in <=2 hops)"
+        manual: true
+        met: true
+        note: "CLAUDE.md architecture + docs/README"
+      - id: names-map-to-features
+        points: 3
+        desc: "file/module names map to features/domains"
+        manual: true
+        met: true
+        note: "features/builder, features/runner, logic_engine.go <-> logicEngine.ts"
+      - id: gotcha-map-exists
+        points: 3
+        desc: "a map of non-obvious pitfalls / where-X-lives exists"
+        probe: "grep -qi 'things that will bite' CLAUDE.md"
+
+  - id: runbooks
+    name: Task runbooks (deploy / release)
+    weight: 10
+    criteria:
+      - id: deploy-runbook-linear
+        points: 4
+        desc: "deploy/release is a linear runbook with exact commands, not ordering-sensitive prose"
+        probe: "test -f docs/runbooks/deploy.md"
+      - id: post-deploy-verification
+        points: 3
+        desc: "a post-deploy verification (smoke check) exists"
+        probe: "test -f scripts/verify-deploy.sh"
+      - id: runbook-steps-ordered
+        points: 3
+        desc: "runbook steps are explicitly ordered and current"
+        manual: true
+        met: true
+        note: "deploy.md numbered gate->build->verify; recovery cross-linked"
+
+  - id: failure-recovery
+    name: Failure-recovery docs
+    weight: 5
+    criteria:
+      - id: symptom-fix-reference
+        points: 3
+        desc: "a symptom -> cause -> fix reference exists"
+        probe: "test -f docs/runbooks/recovery.md"
+      - id: fixes-near-surface
+        points: 2
+        desc: "common failures' fixes are embedded where they surface (e.g. gate error messages)"
+        manual: true
+        met: true
+        note: "cover_check/route_check error lines name the fix; recovery.md table"

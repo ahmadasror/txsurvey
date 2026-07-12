@@ -1,4 +1,4 @@
-.PHONY: run dev build fe-dev fe-build fe-test test lint check cover-check cover-update route-check verify-deploy tidy migrate-new up down docker logs
+.PHONY: run dev build fe-dev fe-build fe-test test lint check cover-check cover-update route-check verify-deploy readiness-score tidy migrate-new up down docker logs
 
 # --- Go ---
 run: ## Run the API (loads .env if present; auto-runs migrations at boot)
@@ -31,6 +31,9 @@ route-check: ## Hard gate: every registered route has an FR endpoint or a waiver
 
 verify-deploy: ## Post-deploy smoke: container up -> local /health -> public edge (run on prod host)
 	bash scripts/verify-deploy.sh
+
+readiness-score: ## Deterministic model-readiness score (reads readiness.yaml, runs probes)
+	python3 scripts/readiness_score.py readiness.yaml
 
 check: ## Umbrella red/green: lint + unit tests + coverage + routes + docs + FE tests/build
 	@set -e; \
