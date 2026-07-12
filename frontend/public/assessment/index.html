@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>txsurvey — Model-Readiness Assessment</title>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --card: #ffffff;
+    --ink: #22201c;
+    --muted: #6b665d;
+    --line: #e7e3da;
+    --accent: #2f6b4f;      /* pine */
+    --accent-soft: #eaf2ec;
+    --red: #b23b3b;
+    --red-soft: #f7e7e5;
+    --amber: #b8862f;
+    --amber-soft: #f7efdd;
+    --green: #2f7d55;
+    --green-soft: #e6f1ea;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f; --card: #1f1e17; --ink: #ece8df; --muted: #a49e90;
+      --line: #322f26; --accent: #7bb894; --accent-soft: #22301f;
+      --red: #e08a8a; --red-soft: #2e1c1a; --amber: #e0b866; --amber-soft: #2c2417;
+      --green: #7fc79c; --green-soft: #1a2c20;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "Hanken Grotesk", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: .1px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 96px; }
+  header.top { margin-bottom: 8px; }
+  .eyebrow { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 8px 0 6px; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 17px; margin: 0 0 4px; max-width: 62ch; }
+  .meta { color: var(--muted); font-size: 13.5px; margin-top: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  /* score hero */
+  .hero {
+    margin: 28px 0 8px; background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px 28px;
+    display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center;
+  }
+  .bignum { text-align: center; line-height: 1; }
+  .bignum .n { font-size: 68px; font-weight: 800; letter-spacing: -.03em; color: var(--amber); }
+  .bignum .d { font-size: 18px; color: var(--muted); font-weight: 600; }
+  .bignum .tag { margin-top: 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+  .grade { align-self: center; }
+  .grade .track { height: 12px; border-radius: 999px; background: linear-gradient(90deg,var(--red) 0%, var(--amber) 55%, var(--green) 100%); position: relative; opacity: .85; }
+  .grade .pin { position: absolute; top: -5px; width: 3px; height: 22px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 3px var(--card); }
+  .grade .scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11.5px; margin-top: 8px; }
+  .grade p { margin: 14px 0 0; font-size: 15px; }
+  .grade p b { color: var(--ink); }
+
+  @media (max-width: 560px) { .hero { grid-template-columns: 1fr; gap: 18px; } .bignum .n { font-size: 56px; } }
+
+  h2 { font-size: 22px; margin: 44px 0 14px; letter-spacing: -.01em; }
+  h2 .num { color: var(--muted); font-weight: 700; margin-right: 8px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+
+  /* dimension rows */
+  .dims { display: flex; flex-direction: column; gap: 12px; }
+  .dim {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 16px 18px;
+  }
+  .dim .row1 { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
+  .dim .name { font-weight: 700; font-size: 16px; }
+  .dim .wt { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .dim .sc { font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .dim .bar { height: 8px; border-radius: 999px; background: var(--line); margin: 10px 0 10px; overflow: hidden; }
+  .dim .bar > i { display: block; height: 100%; border-radius: 999px; }
+  .dim .why { color: var(--muted); font-size: 14px; margin: 0; }
+  .dim .why b { color: var(--ink); }
+  .red   .sc { color: var(--red); }   .red   .bar > i { background: var(--red); }
+  .amber .sc { color: var(--amber); } .amber .bar > i { background: var(--amber); }
+  .green .sc { color: var(--green); } .green .bar > i { background: var(--green); }
+
+  /* callouts */
+  .call { border-radius: 14px; padding: 16px 18px; margin: 18px 0; font-size: 15px; border: 1px solid var(--line); }
+  .call.key { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+  .call.key b { color: var(--ink); }
+  .call .k { display: block; font-weight: 700; margin-bottom: 4px; color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+
+  .spike { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 12px; }
+  .spike h3 { margin: 0 0 6px; font-size: 16px; }
+  .spike h3 .pass { color: var(--green); font-size: 13px; font-weight: 700; margin-left: 8px; }
+  .spike p { margin: 0; font-size: 14.5px; color: var(--muted); }
+  .spike p b { color: var(--ink); }
+  code { background: var(--accent-soft); color: var(--ink); padding: 1px 6px; border-radius: 6px; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  ol.levers { padding-left: 0; list-style: none; counter-reset: lev; margin: 0; }
+  ol.levers li { counter-increment: lev; position: relative; padding: 12px 16px 12px 52px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; box-shadow: var(--shadow); font-size: 14.5px; }
+  ol.levers li::before { content: counter(lev); position: absolute; left: 14px; top: 12px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+  ol.levers li b { color: var(--ink); }
+  ol.levers li span { color: var(--muted); }
+
+  table.gates { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  table.gates th, table.gates td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.gates th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: color-mix(in srgb, var(--line) 30%, transparent); }
+  table.gates tr:last-child td { border-bottom: 0; }
+  table.gates td code { font-size: 12.5px; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: var(--green-soft); color: var(--green); }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.no { background: var(--red-soft); color: var(--red); }
+
+  details.method { margin-top: 20px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px 18px; box-shadow: var(--shadow); }
+  details.method summary { cursor: pointer; font-weight: 700; padding: 12px 0; font-size: 15px; }
+  details.method[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  details.method ol { padding-left: 20px; } details.method li { margin-bottom: 6px; font-size: 14px; color: var(--muted); }
+  details.method li b { color: var(--ink); }
+  .yard { font-size: 13.5px; color: var(--muted); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; margin-top: 6px; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  footer b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">Model-Readiness Assessment · baseline</div>
+    <h1>Bisakah model yang lebih murah (Sonnet) melanjutkan repo ini dengan benar?</h1>
+    <p class="lede">Skor ini memprediksi apakah agent Sonnet — hanya diberi repo + docs, tanpa manusia menarasikan invariant — bisa menyelesaikan task representatif dengan benar dan sesuai gaya rumah.</p>
+    <div class="meta">
+      <span><b>Repo:</b> txsurvey</span>
+      <span><b>Diukur:</b> 12 Juli 2026</span>
+      <span><b>Metode:</b> 2 run Sonnet unaided + audit gate/CI</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="bignum">
+      <div class="n">66</div>
+      <div class="d">/ 100</div>
+      <div class="tag">baseline</div>
+    </div>
+    <div class="grade">
+      <div class="track"><span class="pin" style="left: 66%"></span></div>
+      <div class="scale"><span>0 · worker-dependent</span><span>85+ · ready</span></div>
+      <p><b>Read: “C+/B−, tulang bagus + CI sudah lumayan, tapi invariant terpenting belum ter-gate.”</b> Repo ini sudah <b>Sonnet-ready untuk kerja yang pattern-obvious</b> (kedua spike membuktikannya). Risiko sisa: invariant yang <i>tidak</i> pattern-obvious, atau yang bisa dilewati run malas sambil tetap hijau.</p>
+    </div>
+  </section>
+
+  <figure style="margin:28px 0 8px; text-align:center;">
+    <a href="infographic.png" title="Buka PNG 800×600">
+      <img src="infographic.png" width="800" height="600" alt="Infografis ringkasan Model-Readiness txsurvey: skor 66/100, determinism 66→66, skor per dimensi, dan gap yang belum ter-gate."
+        style="max-width:100%; height:auto; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);" />
+    </a>
+    <figcaption style="color:var(--muted); font-size:13px; margin-top:10px;">
+      Ringkasan satu halaman (800×600). <a href="infographic.png" download>Unduh PNG</a>
+    </figcaption>
+  </figure>
+
+  <h2>Skor per dimensi</h2>
+  <div class="dims">
+
+    <div class="dim green">
+      <div class="row1"><span><span class="name">1 · Enkapsulasi &amp; exemplar lokal</span> <span class="wt">bobot 25</span></span><span class="sc">82</span></div>
+      <div class="bar"><i style="width:82%"></i></div>
+      <p class="why"><b>Terkuat kedua — terukur, bukan tebakan.</b> 2/2 run mengikuti invariant tanpa disuruh: run A merangkai operator logika baru di <b>kedua</b> engine + model + builder + migration + FR; run B merangkai tipe pertanyaan baru di seluruh rantai. Keduanya memilih exemplar yang benar. Dibatasi 82 karena logic engine <i>terduplikasi</i> (Go ↔ TS) — anti-enkapsulasi yang bertahan hanya karena diingatkan doc, bukan karena desain mencegah divergensi.</p>
+    </div>
+
+    <div class="dim red">
+      <div class="row1"><span><span class="name">2 · Enforcement machine-checkable (gate)</span> <span class="wt">bobot 25</span></span><span class="sc">52</span></div>
+      <div class="bar"><i style="width:52%"></i></div>
+      <p class="why"><b>Gap utama.</b> Sudah ada: CI matrix (lint, <code>go test -race</code> + Postgres, FE typecheck+build, Playwright E2E), <code>spec-validate</code> (gate FR-kontrak), <code>docs-check</code>. Belum ada: <b>parity gate dua engine</b> (invariant #1 cuma dijaga prosa ADR), <b>coverage ratchet</b> (spike nambah test karena <i>memilih</i>, bukan dipaksa), route→FR <code>spec-drift</code> masih <b>advisory</b>, dan <b>nol</b> unit test frontend.</p>
+    </div>
+
+    <div class="dim amber">
+      <div class="row1"><span><span class="name">3 · Sarana self-verification</span> <span class="wt">bobot 15</span></span><span class="sc">60</span></div>
+      <div class="bar"><i style="width:60%"></i></div>
+      <p class="why">Tiap gate deterministik &amp; dijalankan CI, tapi worker harus tahu menjalankan <b>empat</b> perintah terpisah (<code>make lint</code>, <code>make test</code>, <code>npm run build</code>, <code>make docs-check</code>) — tidak ada payung <code>make check</code>. Coverage tidak ditampilkan. Tier integrasi butuh <code>DATABASE_URL</code> <code>*_test</code> manual.</p>
+    </div>
+
+    <div class="dim amber">
+      <div class="row1"><span><span class="name">4 · Kejelasan Definition-of-Done</span> <span class="wt">bobot 10</span></span><span class="sc">62</span></div>
+      <div class="bar"><i style="width:62%"></i></div>
+      <p class="why">DoD nyata &amp; <i>berfungsi</i> — “3 artefak” Lean SDD + checklist eksplisit “Adding a question type or operator” di CLAUDE.md itulah kenapa run A sync FR tanpa disuruh. Tapi berupa prosa tersebar di CLAUDE.md ~200 baris, bukan satu checklist yang menunjuk ke <i>perintah</i> gate.</p>
+    </div>
+
+    <div class="dim green">
+      <div class="row1"><span><span class="name">5 · Navigasi / discoverability</span> <span class="wt">bobot 10</span></span><span class="sc">88</span></div>
+      <div class="bar"><i style="width:88%"></i></div>
+      <p class="why"><b>Dimensi terkuat — terukur.</b> Kedua run <i>menemukan</i> file yang tepat dengan cepat, memilih analog yang benar, dan <b>menggunakan ulang, bukan menemukan-ulang</b>. Nama = fitur (<code>features/builder</code>, <code>logic_engine.go</code> ↔ <code>logicEngine.ts</code>); “things that will bite you” di CLAUDE.md bikin “X ada di mana” ≤1 hop.</p>
+    </div>
+
+    <div class="dim amber">
+      <div class="row1"><span><span class="name">6 · Runbook operasional (deploy/ship)</span> <span class="wt">bobot 10</span></span><span class="sc">60</span></div>
+      <div class="bar"><i style="width:60%"></i></div>
+      <p class="why">Deploy tercatat sebagai section CLAUDE.md dengan perintah <code>docker compose</code> yang tepat &amp; cukup linear — tapi berupa prosa, tidak ada <code>docs/runbooks/</code>, dan tidak ada <b>smoke gate pasca-deploy</b> (sukses deploy masih “dilihat mata”).</p>
+    </div>
+
+    <div class="dim red">
+      <div class="row1"><span><span class="name">7 · Dokumentasi failure-recovery</span> <span class="wt">bobot 5</span></span><span class="sc">50</span></div>
+      <div class="bar"><i style="width:50%"></i></div>
+      <p class="why">Gotcha tersebar inline di CLAUDE.md (port 8080, guard DB <code>*_test</code>, migration forward-only, slug-lock). Tidak ada tabel gejala→sebab→fix. Tabrakan nomor migration yang <i>benar-benar dialami</i> run A adalah skenario recovery yang belum terdokumentasi.</p>
+    </div>
+
+  </div>
+
+  <div class="call key">
+    <span class="k">Kesimpulan yang menanggung beban</span>
+    Invariant bertahan karena <b>ter-enkapsulasi / ada exemplar</b> (kembaran <code>contains</code> di kedua engine; tabel <code>validateAnswer</code> tinggal disalin) dan karena <b>checklist CLAUDE.md menyuruh menyentuh kedua engine</b> — <i>bukan</i> karena ada gate yang menangkap kesalahan. Persis tesis kit: repo menaikkan lantai lewat doc + exemplar; cara menaikkan lebih jauh adalah mengubah invariant yang belum ter-gate menjadi merah/hijau.
+  </div>
+
+  <h2>Apa yang ditunjukkan spike</h2>
+  <p class="lede" style="font-size:15px">Dua agent Sonnet unaided, tanpa hint, di task representatif. Diff-nya diverifikasi Opus (bukan percaya laporan sendiri). Kode kedua spike di-<i>revert</i> setelah skoring — ini pengukuran, bukan fitur.</p>
+
+  <div class="spike">
+    <h3>Run A — operator logika <code>starts_with</code><span class="pass">✓ PASS</span></h3>
+    <p>Tes lockstep dua engine. Model meng-update <b>kedua</b> engine (<code>logic_engine.go</code> + <code>logicEngine.ts</code>), const model, daftar operator builder, type union, migration <code>008</code> (bahkan <b>renumber sendiri</b> setelah tabrakan dengan <code>007</code> run B), test Go, <b>dan sync <code>fr-forms.md</code></b> tanpa disuruh. Diverifikasi ke Postgres live. Level ekspert.</p>
+  </div>
+
+  <div class="spike">
+    <h3>Run B — tipe pertanyaan <code>phone</code><span class="pass">✓ PASS</span></h3>
+    <p>Rantai penuh benar: migration <code>007</code>, const + <code>ValidQuestionType</code>, case <code>validateAnswer</code> (regex), runner <code>QuestionScreen</code>, <code>questionTypes.ts</code>, type union — <b>plus unit test yang ditambah sendiri</b> dengan meniru tabel exemplar. Memilih <code>email</code> (bukan <code>rating</code> yang disarankan PM) sebagai analog struktural yang tepat.</p>
+  </div>
+
+  <h2>Lever berikutnya <span class="num">ROI tertinggi dulu</span></h2>
+  <ol class="levers">
+    <li><b>Parity gate dua engine.</b> <span>Satu tabel <code>(answer, operator, value) → expected</code> dijalankan lewat <i>kedua</i> implementasi <code>conditionMatches</code>, merah kalau berbeda. Mengubah invariant prosa ADR-001 jadi merah/hijau. Win tunggal terbesar.</span></li>
+    <li><b>Berdirikan unit test frontend.</b> <span>Belum ada vitest sama sekali; tambah satu → parity test di atas punya rumah, dan TS engine langsung ter-cover.</span></li>
+    <li><b>Payung <code>make check</code>.</b> <span>Satu target membungkus lint + test + FE build + docs-check (+ parity + coverage) — satu merah/hijau yang tak bisa dilewatkan worker lemah.</span></li>
+    <li><b>Coverage ratchet.</b> <span>Baseline = angka hari ini (service ~35%, auth ~85%, handler ~2%), gagal saat regresi. Memaksa test yang tadinya opsional.</span></li>
+    <li><b>Jadikan <code>spec-drift</code> enforcing.</b> <span>Promosikan route→FR dari advisory (exit 0) jadi gate keras dengan waiver untuk legacy.</span></li>
+    <li><b><code>docs/runbooks/</code> + smoke gate + <code>recovery.md</code>.</b> <span>Linearkan prosa deploy; tambah <code>verify-deploy</code> (container up → <code>/health</code> → edge publik); tulis tabel gejala→fix.</span></li>
+  </ol>
+
+  <h2>Inventaris gate (hari ini)</h2>
+  <table class="gates">
+    <thead><tr><th>Gate</th><th>Perintah</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Lint (vet + gofmt)</td><td><code>make lint</code></td><td><span class="pill ok">enforced · CI</span></td></tr>
+      <tr><td>Test (+race, +DB)</td><td><code>make test</code></td><td><span class="pill ok">enforced · CI</span></td></tr>
+      <tr><td>FE typecheck + build</td><td><code>npm run build</code></td><td><span class="pill ok">enforced · CI</span></td></tr>
+      <tr><td>E2E create-survey</td><td>Playwright</td><td><span class="pill ok">enforced · CI</span></td></tr>
+      <tr><td>FR contract schema</td><td><code>make spec-validate</code></td><td><span class="pill ok">enforced</span></td></tr>
+      <tr><td>Koherensi docs</td><td><code>make docs-check</code></td><td><span class="pill ok">enforced</span></td></tr>
+      <tr><td>Route → FR</td><td><code>make spec-drift</code></td><td><span class="pill warn">advisory (exit 0)</span></td></tr>
+      <tr><td>Parity dua engine</td><td>—</td><td><span class="pill no">tidak ada</span></td></tr>
+      <tr><td>Coverage ratchet</td><td>—</td><td><span class="pill no">tidak ada</span></td></tr>
+      <tr><td>Payung satu perintah</td><td>—</td><td><span class="pill no">tidak ada</span></td></tr>
+      <tr><td>Smoke pasca-deploy</td><td>—</td><td><span class="pill no">tidak ada</span></td></tr>
+    </tbody>
+  </table>
+
+  <details class="method">
+    <summary>Metode &amp; invariant yardstick (reproducible)</summary>
+    <ol>
+      <li><b>Spike</b> — spawn agent Sonnet unaided di task nyata, user-voice, <b>nol hint invariant</b>; minta laporan keputusan / reuse-vs-baru / apa yang harus ditebak.</li>
+      <li><b>Verify</b> — Opus cek tiap <i>diff</i> terhadap yardstick. Jangan percaya laporan sendiri.</li>
+      <li><b>Map</b> — miss <i>dengan exemplar lokal</i> = gap enkapsulasi; miss <i>tanpa gate</i> = gap enforcement; “tak ketemu” = gap navigasi.</li>
+      <li><b>Improve</b> — utamakan gate mesin daripada dokumen untuk tiap invariant nyata.</li>
+      <li><b>Re-score</b> — jalankan ulang &amp; diff. Angka bergerak hanya di tempat enforcement nyata ditambahkan.</li>
+    </ol>
+    <div class="yard"><b>Yardstick txsurvey:</b> perubahan logika mendarat di <b>kedua</b> engine + kedua test suite · <code>owner_id = $ AND deleted_at IS NULL</code> di tiap query form-scoped · jump forward-only · validasi submit tetap logic-aware · tipe/operator baru menyusuri rantai penuh CLAUDE.md · migration ambil nomor berikutnya, forward-only · FR pemilik diupdate di perubahan yang sama · <code>make lint</code> + <code>make test</code> + FE build + <code>make docs-check</code> hijau.</div>
+  </details>
+
+  <footer>
+    Dihasilkan oleh Claude (Opus 4.8) dari pengukuran langsung terhadap repo. Sumber lengkap: <b>docs/sonnet-readiness.md</b>; metode portabel: <b>docs/model-readiness-kit.md</b>. Halaman ini statis &amp; publik (tanpa auth) — <b>noindex</b>.
+  </footer>
+
+</div>
+</body>
+</html>

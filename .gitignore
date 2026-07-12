@@ -37,3 +37,7 @@ deploy/production.env
 
 # Uploaded assets (runtime)
 data/
+
+# python bytecode
+__pycache__/
+*.pyc
