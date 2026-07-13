@@ -91,10 +91,10 @@ export function RunnerPage() {
     (finalAnswers: Answers) => {
       // Only submit answers to questions actually on the reachable path.
       const reach = new Set(reachablePath(questions, rules, finalAnswers));
-      const payload: SubmitAnswer[] = questions
+      const answersPayload: SubmitAnswer[] = questions
         .filter((q) => q.type !== "statement" && reach.has(q.id) && !isEmpty(finalAnswers[q.id]))
         .map((q) => ({ question_id: q.id, value: finalAnswers[q.id] as AnswerValue }));
-      submit.mutate(payload, {
+      submit.mutate({ answers: answersPayload, responseId: responseIdRef.current }, {
         onSuccess: () => {
           if (form?.settings.redirect_url) window.location.href = form.settings.redirect_url;
           else setDone(true);
