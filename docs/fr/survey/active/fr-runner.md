@@ -29,10 +29,17 @@ questions, rejecting answers to skipped ones. Rate-limited per IP.
 ### FR-RUN-002 — Submit a response
 **Code**: `public_handler.go` (`Submit`), `response_service.go` (`Submit`, `validateSubmission`), `response_repo.go` (`Insert`)
 
-- AC-002-1: `POST /public/forms/:slug/responses` with `{answers:[{question_id, value}]}` persists the response + answers in one transaction.
+- AC-002-1: `POST /public/forms/:slug/responses` with `{answers:[{question_id, value}]}` persists the response + answers in one transaction. An optional `response_id` (from `/start`, FR-RUN-003) makes Submit **finalize** that in-progress row (stamp `completed`/`submitted_at`/`completed_at`, attach answers) instead of inserting a new one — one row per respondent. A missing/stale/cross-form `response_id` falls back to inserting a fresh completed row (behaviour unchanged from no-paradata clients).
 - AC-002-2: per-type answer validation (`validateAnswer`); required-on-reachable-path enforced (422 `REQUIRED`); answers to unreachable questions rejected (422 `INVALID_ANSWER`).
 - AC-002-3: answer to an unknown question / a statement → 422.
 - AC-002-4: rate-limited (20/min/IP → 429 `RATE_LIMITED`).
+
+### FR-RUN-003 — Progress capture (paradata, progress-only)
+**Code**: `public_handler.go` (`Start`, `Progress`), `response_service.go` (`StartSession`, `UpdateProgress`), `response_repo.go` (`StartSession`, `AdvanceProgress`)
+
+- AC-003-1: `POST /public/forms/:slug/start` opens an **in-progress** response (`completed=false`, `started_at`/`last_seen_at` stamped) and returns `{response_id}`; 404 `FORM_NOT_FOUND` if the slug isn't a published form. Rate-limited 30/min/IP.
+- AC-003-2: `POST /public/forms/:slug/progress` with `{response_id, position}` advances `furthest_position` **monotonically** (`GREATEST`, never regresses) and bumps `last_seen_at`. A ping to an already-completed response is a silent no-op; an unknown/malformed id → 404 `RESPONSE_NOT_FOUND`; negative `position` clamps to 0.
+- AC-003-3: **in-progress rows are inert paradata.** Every owner-facing surface (response count, results list, completion-rate denominator, CSV, analytics) is scoped to `completed`, so partial rows change none of those numbers — they feed only the drop-off funnel (FR-RES-005). When the respondent submits, Submit **finalizes** their in-progress row into a completed one (FR-RUN-002), so a finisher leaves no lingering in-progress ghost.
 
 ---
 
@@ -42,6 +49,8 @@ questions, rejecting answers to skipped ones. Rate-limited per IP.
 |---|---|---|
 | GET | `/api/v1/public/forms/:slug` | public |
 | POST | `/api/v1/public/forms/:slug/responses` | public |
+| POST | `/api/v1/public/forms/:slug/start` | public |
+| POST | `/api/v1/public/forms/:slug/progress` | public |
 
 ### Error Codes
 
@@ -79,6 +88,7 @@ fr_file: docs/fr/survey/active/fr-runner.md
 covers:
   - FR-RUN-001
   - FR-RUN-002
+  - FR-RUN-003
 
 endpoints:
   - id: AC-RUN-FETCH
@@ -89,11 +99,19 @@ endpoints:
     method: POST
     path: /api/v1/public/forms/{slug}/responses
     auth: { mode: public }
+  - id: AC-RUN-START
+    method: POST
+    path: /api/v1/public/forms/{slug}/start
+    auth: { mode: public }
+  - id: AC-RUN-PROGRESS
+    method: POST
+    path: /api/v1/public/forms/{slug}/progress
+    auth: { mode: public }
 
 db:
   writes:
     - table: responses
-      columns_declared: [id, form_id, completed, meta, submitted_at]
+      columns_declared: [id, form_id, completed, meta, submitted_at, started_at, last_seen_at, completed_at, furthest_position]
     - table: answers
       columns_declared: [id, response_id, question_id, value, created_at]
 

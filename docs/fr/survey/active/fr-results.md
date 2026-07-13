@@ -38,6 +38,14 @@ per-question analytics, and CSV export. Ownership-scoped. No writes.
 - AC-004-3: non-owner / absent form → 404 `FORM_NOT_FOUND`.
 - AC-004-4: SPA guards the action behind a confirm dialog (not an immediate submit).
 
+### FR-RES-005 — Drop-off funnel (paradata)
+**Code**: `internal/handler/results_handler.go` (`Funnel`), `internal/service/results_service.go` (`Funnel`, `buildFunnel`), `internal/repository/response_repo.go` (`FunnelByForm`)
+
+- AC-005-1: `GET /forms/:id/funnel` returns `{starts, completed, steps[]}` where each step is `{question_id, title, position, reached}`.
+- AC-005-2: `starts` = every opened session (completed + abandoned in-progress paradata rows); `completed` = finishers. `reached` for a question at position `p` = `completed + (in-progress sessions with furthest_position >= p)` — a monotonically non-increasing, position-based approximation (paradata records the furthest position seen, not the exact logic-branched path).
+- AC-005-3: because Submit **finalizes** the runner's in-progress row (see FR-RUN-002), a completed respondent leaves ONE row — never an orphaned in-progress ghost — so completers are not double-counted as abandoners.
+- AC-005-4: non-owner / absent form → 404 `FORM_NOT_FOUND`.
+
 ---
 
 ## 3. API Surface
@@ -48,6 +56,7 @@ per-question analytics, and CSV export. Ownership-scoped. No writes.
 | DELETE | `/api/v1/forms/:id/responses` | session |
 | GET | `/api/v1/forms/:id/responses/:rid` | session |
 | GET | `/api/v1/forms/:id/analytics` | session |
+| GET | `/api/v1/forms/:id/funnel` | session |
 | GET | `/api/v1/forms/:id/export.csv` | session |
 
 ---
@@ -79,6 +88,7 @@ covers:
   - FR-RES-002
   - FR-RES-003
   - FR-RES-004
+  - FR-RES-005
 
 endpoints:
   - id: AC-RES-LIST
@@ -96,6 +106,10 @@ endpoints:
   - id: AC-RES-ANALYTICS
     method: GET
     path: /api/v1/forms/{id}/analytics
+    auth: { mode: session }
+  - id: AC-RES-FUNNEL
+    method: GET
+    path: /api/v1/forms/{id}/funnel
     auth: { mode: session }
   - id: AC-RES-EXPORT
     method: GET

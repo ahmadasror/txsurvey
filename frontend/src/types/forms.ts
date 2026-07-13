@@ -177,3 +177,18 @@ export interface FormAnalytics {
   completion_rate: number;
   questions: QuestionSummary[];
 }
+
+/** FunnelStep is one question's retention in the drop-off funnel. */
+export interface FunnelStep {
+  question_id: string;
+  title: string;
+  position: number;
+  reached: number;
+}
+
+/** FormFunnel is the response drop-off funnel (GET /forms/:id/funnel). */
+export interface FormFunnel {
+  starts: number;
+  completed: number;
+  steps: FunnelStep[];
+}

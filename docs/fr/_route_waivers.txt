@@ -1,0 +1,11 @@
+# Route → FR waivers (read by scripts/route_check.py).
+#
+# Each line is a registered route that is intentionally NOT (yet) tied to an FR
+# endpoint, so `make route-check` stays green. Format: `METHOD /normalized/path`
+# ({id}/:id segments written as *). Keep this list SHORT — a waiver is a backlog
+# item, not a hiding place. New routes should get an FR entry, not a waiver.
+# Lines starting with # and blank lines are ignored.
+
+# Asset upload (banner/logo) for an owned form — predates the FR contract blocks.
+# Backlog: fold into fr-forms.md endpoints[]. See docs/fr/survey/active/fr-forms.md.
+POST /api/v1/forms/*/assets

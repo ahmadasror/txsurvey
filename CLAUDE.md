@@ -9,8 +9,10 @@ See `README.md` for setup and the OAuth/test-user caveat.
 
 ```bash
 make run                     # go run ./cmd/server (auto-runs embedded migrations)
+make check                   # umbrella gate: lint+unit tests+coverage+routes+docs+FE tests/build (DB-free)
 make test                    # go test ./...  (integration tests need DATABASE_URL)
 go test ./... -short         # unit only (skips DB-backed tests in tests/)
+cd frontend && npm run test  # frontend unit tests (vitest) — incl. dual-engine parity
 go test ./tests/ -run TestE2EHappyPath -v    # one integration test
 make build                   # SPA build -> stage at internal/web/dist -> go build -tags embedspa
 make lint                    # go vet + gofmt check

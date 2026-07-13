@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { apiBase } from "@/lib/paths";
-import type { FormAnalytics, ResponseItem } from "@/types/forms";
+import type { FormAnalytics, FormFunnel, ResponseItem } from "@/types/forms";
 
 export function useResponses(formId: string) {
   return useQuery<ResponseItem[]>({
@@ -17,6 +17,14 @@ export function useAnalytics(formId: string) {
   });
 }
 
+/** useFunnel loads the response drop-off funnel (per-question retention). */
+export function useFunnel(formId: string) {
+  return useQuery<FormFunnel>({
+    queryKey: ["funnel", formId],
+    queryFn: () => api<FormFunnel>(`/forms/${formId}/funnel`),
+  });
+}
+
 /** useDeleteResponses clears all collected responses for a form, then refreshes
  *  the analytics + responses views. The form and its questions are untouched. */
 export function useDeleteResponses(formId: string) {
@@ -26,6 +34,7 @@ export function useDeleteResponses(formId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["analytics", formId] });
       qc.invalidateQueries({ queryKey: ["responses", formId] });
+      qc.invalidateQueries({ queryKey: ["funnel", formId] });
     },
   });
 }

@@ -119,6 +119,48 @@ func (s *ResultsService) Analytics(ctx context.Context, ownerID, formID string) 
 	return &model.FormAnalytics{ResponseCount: total, CompletionRate: rate, Questions: summaries}, nil
 }
 
+// Funnel returns the response drop-off funnel — per-question retention derived
+// from paradata (session starts + furthest_position of abandoned sessions).
+func (s *ResultsService) Funnel(ctx context.Context, ownerID, formID string) (*model.FormFunnel, error) {
+	if _, err := s.requireForm(ctx, ownerID, formID); err != nil {
+		return nil, err
+	}
+	questions, err := s.questions.ListByForm(ctx, formID)
+	if err != nil {
+		return nil, err
+	}
+	data, err := s.responses.FunnelByForm(ctx, formID)
+	if err != nil {
+		return nil, err
+	}
+	return buildFunnel(questions, data), nil
+}
+
+// buildFunnel turns raw paradata aggregates into per-question retention. A
+// respondent "reached" a question at position p if they completed the form (they
+// went all the way through) OR their still-in-progress session's furthest_position
+// is >= p. Because completed sessions are a constant added to every step and the
+// abandoned tail only shrinks as p grows, the resulting curve is monotonically
+// non-increasing — a proper funnel. Statement questions are kept as steps so the
+// positions line up with the runner's navigation. The reached count is a
+// position-based approximation (paradata records the furthest position seen, not
+// the exact logic-branched path).
+func buildFunnel(questions []model.Question, d repository.FunnelData) *model.FormFunnel {
+	f := &model.FormFunnel{Starts: d.Starts, Completed: d.Completed, Steps: make([]model.FunnelStep, 0, len(questions))}
+	for _, q := range questions {
+		reached := d.Completed
+		for pos, n := range d.AbandonedAt {
+			if pos >= q.Position {
+				reached += n
+			}
+		}
+		f.Steps = append(f.Steps, model.FunnelStep{
+			QuestionID: q.ID, Title: q.Title, Position: q.Position, Reached: reached,
+		})
+	}
+	return f
+}
+
 // computeSummary builds a single question's analytics from its raw answers.
 func computeSummary(q model.Question, raws []json.RawMessage) model.QuestionSummary {
 	sum := model.QuestionSummary{QuestionID: q.ID, Title: q.Title, Type: q.Type, Answered: len(raws)}

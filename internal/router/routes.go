@@ -37,6 +37,10 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	public.Use(middleware.RateLimit(120, time.Minute))
 	public.GET("/forms/:slug", h.Public.GetForm)
 	public.POST("/forms/:slug/responses", middleware.RateLimit(20, time.Minute), h.Public.Submit)
+	// Paradata capture (progress-only). Start creates a row (stricter cap);
+	// progress pings are frequent, so they ride the group's base limit.
+	public.POST("/forms/:slug/start", middleware.RateLimit(30, time.Minute), h.Public.Start)
+	public.POST("/forms/:slug/progress", h.Public.Progress)
 
 	// Creator-authenticated group (session cookie required).
 	authed := api.Group("")
@@ -73,6 +77,7 @@ func registerRoutes(r *gin.Engine, cfg *config.Config, h *Handlers, jwtMgr *auth
 	authed.DELETE("/forms/:id/responses", h.Results.DeleteResponses)
 	authed.GET("/forms/:id/responses/:rid", h.Results.GetResponse)
 	authed.GET("/forms/:id/analytics", h.Results.Analytics)
+	authed.GET("/forms/:id/funnel", h.Results.Funnel)
 	authed.GET("/forms/:id/export.csv", h.Results.ExportCSV)
 
 	_ = cfg

@@ -597,3 +597,166 @@ func TestPublicRunnerFlow(t *testing.T) {
 		t.Fatalf("unknown slug: want 404, got %d", code)
 	}
 }
+
+// TestParadataInvisibleToOwner is the load-bearing check for FR-RUN-003: an
+// in-progress (started but not submitted) response must be INERT — captured as
+// paradata but invisible to every owner-facing surface (count, list, analytics)
+// until a real submission lands. This guards the exact cross-cutting hazard the
+// design had to solve: a new row type silently inflating an existing metric.
+func TestParadataInvisibleToOwner(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Funnel"}, &form)
+	var q struct {
+		ID string `json:"id"`
+	}
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Name", "required": true}, &q)
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+
+	// Start a session (in_progress row) + advance progress.
+	var started struct {
+		ResponseID string `json:"response_id"`
+	}
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/start", nil, &started); code != http.StatusCreated {
+		t.Fatalf("start: want 201, got %d", code)
+	}
+	if started.ResponseID == "" {
+		t.Fatal("start returned no response_id")
+	}
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/progress",
+		map[string]any{"response_id": started.ResponseID, "position": 1}, nil); code != http.StatusOK {
+		t.Fatalf("progress: want 200, got %d", code)
+	}
+
+	// Owner surfaces must NOT see the in-progress row.
+	var analytics struct {
+		ResponseCount int `json:"response_count"`
+	}
+	h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/analytics", nil, &analytics)
+	if analytics.ResponseCount != 0 {
+		t.Fatalf("in-progress leaked into analytics: response_count = %d, want 0", analytics.ResponseCount)
+	}
+	var responses []struct{ ID string }
+	h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/responses", nil, &responses)
+	if len(responses) != 0 {
+		t.Fatalf("in-progress leaked into results list: %d rows, want 0", len(responses))
+	}
+
+	// A real submission DOES count.
+	h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/responses",
+		map[string]any{"answers": []map[string]any{{"question_id": q.ID, "value": "Alice"}}}, nil)
+	h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/analytics", nil, &analytics)
+	if analytics.ResponseCount != 1 {
+		t.Fatalf("after submit: response_count = %d, want 1", analytics.ResponseCount)
+	}
+
+	// Progress on a bogus id -> 404; progress after completion is a no-op (200/404 tolerated).
+	if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/progress",
+		map[string]any{"response_id": "00000000-0000-0000-0000-000000000000", "position": 1}, nil); code != http.StatusNotFound {
+		t.Fatalf("progress bogus id: want 404, got %d", code)
+	}
+}
+
+// TestFunnelDropOff exercises FR-RES-005 end to end and, crucially, proves the
+// finalize reconciliation (FR-RUN-002): a submission that carries its start
+// response_id UPDATES the in-progress row into a completed one rather than leaving
+// a ghost. Without that, every completer would also show as an abandoner and the
+// funnel's `starts`/`reached` would be inflated.
+func TestFunnelDropOff(t *testing.T) {
+	h := newHarness(t)
+
+	var form struct {
+		ID   string `json:"id"`
+		Slug string `json:"slug"`
+	}
+	h.do(http.MethodPost, "/api/v1/forms", map[string]string{"title": "Funnel"}, &form)
+
+	type q struct {
+		ID       string `json:"id"`
+		Position int    `json:"position"`
+	}
+	var q1, q2, q3 q
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Q1", "required": true}, &q1)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Q2"}, &q2)
+	h.mustCreateQuestion(form.ID, map[string]any{"type": "short_text", "title": "Q3"}, &q3)
+	if code := h.do(http.MethodPost, "/api/v1/forms/"+form.ID+"/publish", nil, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d", code)
+	}
+	submitURL := "/api/v1/public/forms/" + form.Slug + "/responses"
+	answersQ1 := []map[string]any{{"question_id": q1.ID, "value": "x"}}
+
+	start := func() string {
+		var s struct {
+			ResponseID string `json:"response_id"`
+		}
+		if code, _ := h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/start", nil, &s); code != http.StatusCreated {
+			t.Fatalf("start: %d", code)
+		}
+		return s.ResponseID
+	}
+	progress := func(id string, pos int) {
+		h.doAnon(http.MethodPost, "/api/v1/public/forms/"+form.Slug+"/progress",
+			map[string]any{"response_id": id, "position": pos}, nil)
+	}
+
+	// Session A: start, advance to Q2, then abandon (stays in-progress).
+	a := start()
+	progress(a, q2.Position)
+
+	// Session B: start, advance, submit WITH response_id -> finalizes A's-style row.
+	b := start()
+	progress(b, q2.Position)
+	if code, _ := h.doAnon(http.MethodPost, submitURL,
+		map[string]any{"response_id": b, "answers": answersQ1}, nil); code != http.StatusCreated {
+		t.Fatalf("finalizing submit: %d", code)
+	}
+
+	// Session C: submit directly, no start (fallback insert).
+	if code, _ := h.doAnon(http.MethodPost, submitURL, map[string]any{"answers": answersQ1}, nil); code != http.StatusCreated {
+		t.Fatalf("direct submit: %d", code)
+	}
+
+	var funnel struct {
+		Starts    int `json:"starts"`
+		Completed int `json:"completed"`
+		Steps     []struct {
+			QuestionID string `json:"question_id"`
+			Position   int    `json:"position"`
+			Reached    int    `json:"reached"`
+		} `json:"steps"`
+	}
+	h.do(http.MethodGet, "/api/v1/forms/"+form.ID+"/funnel", nil, &funnel)
+
+	// 3 rows total: A (in-progress) + B (finalized, ONE row — no ghost) + C. If
+	// finalize left a ghost, starts would be 4.
+	if funnel.Starts != 3 {
+		t.Fatalf("starts = %d, want 3 (finalize must not leave an in-progress ghost)", funnel.Starts)
+	}
+	if funnel.Completed != 2 {
+		t.Fatalf("completed = %d, want 2", funnel.Completed)
+	}
+	if len(funnel.Steps) != 3 {
+		t.Fatalf("steps = %d, want 3", len(funnel.Steps))
+	}
+	reached := map[string]int{}
+	for _, s := range funnel.Steps {
+		reached[s.QuestionID] = s.Reached
+	}
+	// Q1,Q2 reached by both completers + the abandoned session (furthest=Q2); Q3
+	// only by the completers.
+	if reached[q1.ID] != 3 || reached[q2.ID] != 3 || reached[q3.ID] != 2 {
+		t.Fatalf("reached = {Q1:%d Q2:%d Q3:%d}, want {3 3 2}", reached[q1.ID], reached[q2.ID], reached[q3.ID])
+	}
+	// Funnel must be monotonically non-increasing down the form.
+	for i := 1; i < len(funnel.Steps); i++ {
+		if funnel.Steps[i].Reached > funnel.Steps[i-1].Reached {
+			t.Fatalf("funnel not monotonic at step %d: %d > %d", i, funnel.Steps[i].Reached, funnel.Steps[i-1].Reached)
+		}
+	}
+}
