@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/BrandMark";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { QuestionScreen } from "@/features/runner/QuestionScreen";
-import { usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
+import { pingProgress, startResponseSession, usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { themeStyle } from "@/lib/themes";
 import { assetUrl, homePath } from "@/lib/paths";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
@@ -33,11 +33,44 @@ export function RunnerPage() {
   const [answers, setAnswers] = useState<Answers>({});
   const [error, setError] = useState<string | null>(null);
 
+  // Paradata (FR-RUN-003): best-effort progress beacons, never allowed to
+  // affect fetch/navigation/submit. responseId lives in a ref (not state) so a
+  // late-arriving /start response never triggers a re-render or race with
+  // navigation; a missing id just means every ping below is a no-op.
+  const responseIdRef = useRef<string | null>(null);
+
   const questions: Question[] = useMemo(() => form?.questions ?? [], [form]);
   const rules: LogicRule[] = useMemo(() => form?.logic_rules ?? [], [form]);
 
   const currentId = history[history.length - 1];
   const current = questions.find((q) => q.id === currentId) ?? null;
+
+  // Open the paradata session once the published form has loaded. Failure is
+  // swallowed — the respondent must still be able to fill and submit.
+  useEffect(() => {
+    if (!form?.id || !slug) return;
+    let cancelled = false;
+    startResponseSession(slug)
+      .then((r) => {
+        if (!cancelled) responseIdRef.current = r.response_id;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [form?.id, slug]);
+
+  // sendProgress reports the position of the question the respondent now sees.
+  // Fire-and-forget: no response_id (start failed) or a rejected request is a
+  // silent no-op, never surfaced to the respondent.
+  const sendProgress = useCallback(
+    (position: number) => {
+      const responseId = responseIdRef.current;
+      if (!responseId) return;
+      pingProgress(slug, responseId, position).catch(() => {});
+    },
+    [slug],
+  );
 
   const setAnswer = (qid: string, v: AnswerValue) => {
     setAnswers((a) => ({ ...a, [qid]: v }));
@@ -49,6 +82,8 @@ export function RunnerPage() {
     if (first) {
       setHistory([first]);
       setStarted(true);
+      const firstQ = questions.find((q) => q.id === first);
+      if (firstQ) sendProgress(firstQ.position);
     }
   };
 
@@ -77,9 +112,14 @@ export function RunnerPage() {
     }
     setError(null);
     const nid = nextQuestionId(questions, rules, answers, current.id);
-    if (nid === null) doSubmit(answers);
-    else setHistory((h) => [...h, nid]);
-  }, [current, answers, questions, rules, doSubmit]);
+    if (nid === null) {
+      doSubmit(answers);
+    } else {
+      setHistory((h) => [...h, nid]);
+      const nextQ = questions.find((q) => q.id === nid);
+      if (nextQ) sendProgress(nextQ.position);
+    }
+  }, [current, answers, questions, rules, doSubmit, sendProgress]);
 
   const back = useCallback(() => {
     setError(null);

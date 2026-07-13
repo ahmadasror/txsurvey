@@ -26,3 +26,19 @@ export function useSubmitResponse(slug: string) {
       }),
   });
 }
+
+/** startResponseSession opens an in-progress response for paradata capture
+ *  (drop-off tracking). Best-effort: callers must swallow rejections — a
+ *  failure here must never block the respondent from filling the form. */
+export function startResponseSession(slug: string) {
+  return api<{ response_id: string }>(`/public/forms/${slug}/start`, { method: "POST" });
+}
+
+/** pingProgress advances an in-progress response's furthest-reached question
+ *  position. Fire-and-forget: callers must swallow rejections. */
+export function pingProgress(slug: string, responseId: string, position: number) {
+  return api<{ ok: boolean }>(`/public/forms/${slug}/progress`, {
+    method: "POST",
+    body: JSON.stringify({ response_id: responseId, position }),
+  });
+}
