@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/ahmadasror/txsurvey/internal/model"
@@ -37,7 +38,8 @@ func (r *ResponseRepo) Insert(ctx context.Context, formID string, completed bool
 
 	var responseID string
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO responses (form_id, completed, meta) VALUES ($1, $2, $3) RETURNING id`,
+		`INSERT INTO responses (form_id, completed, meta, started_at, completed_at)
+		 VALUES ($1, $2, $3, now(), CASE WHEN $2 THEN now() ELSE NULL END) RETURNING id`,
 		formID, completed, metaJSON,
 	).Scan(&responseID); err != nil {
 		return "", fmt.Errorf("insert response: %w", err)
@@ -58,10 +60,13 @@ func (r *ResponseRepo) Insert(ctx context.Context, formID string, completed bool
 	return responseID, nil
 }
 
-// CountByForm returns the total number of responses for a form.
+// CountByForm returns the number of COMPLETED responses for a form. In-progress
+// paradata rows (completed=false, written by StartSession) are excluded so this
+// count — used as the owner's response total and the completion-rate denominator
+// — keeps its pre-paradata meaning.
 func (r *ResponseRepo) CountByForm(ctx context.Context, formID string) (int, error) {
 	var n int
-	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM responses WHERE form_id = $1`, formID).Scan(&n); err != nil {
+	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM responses WHERE form_id = $1 AND completed`, formID).Scan(&n); err != nil {
 		return 0, fmt.Errorf("count responses: %w", err)
 	}
 	return n, nil
@@ -92,7 +97,7 @@ func (r *ResponseRepo) DeleteByForm(ctx context.Context, formID string) (int, er
 func (r *ResponseRepo) ListByForm(ctx context.Context, formID string, limit, offset int) ([]model.Response, int, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT id, form_id, completed, meta, submitted_at
-		FROM responses WHERE form_id = $1
+		FROM responses WHERE form_id = $1 AND completed
 		ORDER BY submitted_at DESC LIMIT $2 OFFSET $3`, formID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list responses: %w", err)
@@ -149,12 +154,63 @@ func (r *ResponseRepo) AllAnswers(ctx context.Context, formID string) ([]model.A
 	rows, err := r.pool.Query(ctx, `
 		SELECT a.id, a.response_id, a.question_id, a.value, a.created_at
 		FROM answers a JOIN responses r ON r.id = a.response_id
-		WHERE r.form_id = $1`, formID)
+		WHERE r.form_id = $1 AND r.completed`, formID)
 	if err != nil {
 		return nil, fmt.Errorf("all answers: %w", err)
 	}
 	defer rows.Close()
 	return scanAnswers(rows)
+}
+
+// StartSession creates an in-progress (completed=false) response for a form and
+// returns its id — the client holds it and pings AdvanceProgress as it navigates.
+// It carries no answers and, being completed=false, is invisible to every
+// owner-facing surface (all scoped to completed) until a future funnel view.
+func (r *ResponseRepo) StartSession(ctx context.Context, formID string, meta model.ResponseMeta) (string, error) {
+	metaJSON, err := json.Marshal(meta)
+	if err != nil {
+		return "", fmt.Errorf("encode response meta: %w", err)
+	}
+	var id string
+	if err := r.pool.QueryRow(ctx,
+		`INSERT INTO responses (form_id, completed, meta, started_at, last_seen_at, furthest_position)
+		 VALUES ($1, false, $2, now(), now(), 0) RETURNING id`,
+		formID, metaJSON,
+	).Scan(&id); err != nil {
+		return "", fmt.Errorf("start session: %w", err)
+	}
+	return id, nil
+}
+
+// AdvanceProgress bumps an in-progress response's furthest_position (monotonic —
+// GREATEST so out-of-order/concurrent pings can't regress it) and last_seen_at.
+// Returns (matched, exists): matched=false means the row is already completed or
+// absent; exists separates "already completed" (true) from "no such id / malformed
+// id" (false), so the caller can 404 the latter and no-op the former.
+func (r *ResponseRepo) AdvanceProgress(ctx context.Context, responseID string, position int) (matched, exists bool, err error) {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE responses SET last_seen_at = now(), furthest_position = GREATEST(furthest_position, $2)
+		 WHERE id = $1 AND NOT completed`, responseID, position)
+	if err != nil {
+		// A malformed (non-UUID) id is a client error, not a server fault.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+			return false, false, nil
+		}
+		return false, false, fmt.Errorf("advance progress: %w", err)
+	}
+	if tag.RowsAffected() > 0 {
+		return true, true, nil
+	}
+	if err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM responses WHERE id = $1)`, responseID).Scan(&exists); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+			return false, false, nil
+		}
+		return false, false, fmt.Errorf("check response exists: %w", err)
+	}
+	return false, exists, nil
 }
 
 // attachAnswers loads answers for the given response ids and attaches them.

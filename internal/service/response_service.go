@@ -11,13 +11,26 @@ import (
 	"github.com/ahmadasror/txsurvey/pkg/apperror"
 )
 
+// publicFormStore / responseWriter are the narrow slices of the form/response
+// repos the runner needs — interfaces so StartSession/UpdateProgress are unit-
+// testable without a DB (the concrete repos satisfy them, so wiring is unchanged).
+type publicFormStore interface {
+	GetPublishedBySlug(ctx context.Context, slug string) (*model.Form, error)
+}
+
+type responseWriter interface {
+	Insert(ctx context.Context, formID string, completed bool, meta model.ResponseMeta, answers []model.Answer) (string, error)
+	StartSession(ctx context.Context, formID string, meta model.ResponseMeta) (string, error)
+	AdvanceProgress(ctx context.Context, responseID string, position int) (matched, exists bool, err error)
+}
+
 // ResponseService serves the public runner: form fetch by slug and submission
 // with server-side validation (required + per-type). Phase 3 is LINEAR — every
 // answerable question is reachable; Phase 5 makes reachability logic-aware.
 type ResponseService struct {
-	forms     *repository.FormRepo
+	forms     publicFormStore
 	questions *repository.QuestionRepo
-	responses *repository.ResponseRepo
+	responses responseWriter
 	logic     *repository.LogicRepo
 }
 
@@ -80,6 +93,39 @@ func (s *ResponseService) Submit(ctx context.Context, slug string, req dto.Submi
 	}
 
 	return s.responses.Insert(ctx, form.ID, true, meta, stored)
+}
+
+// StartSession opens an in-progress response for a published form (paradata
+// capture) and returns its id. The runner calls this on load and echoes the id
+// to UpdateProgress as the respondent advances. The row is completed=false, so
+// it is invisible to every owner-facing surface until a future funnel view.
+func (s *ResponseService) StartSession(ctx context.Context, slug string, meta model.ResponseMeta) (string, error) {
+	form, err := s.forms.GetPublishedBySlug(ctx, slug)
+	if err != nil {
+		return "", err
+	}
+	if form == nil {
+		return "", apperror.New(http.StatusNotFound, "FORM_NOT_FOUND", "form not found or not published")
+	}
+	return s.responses.StartSession(ctx, form.ID, meta)
+}
+
+// UpdateProgress advances an in-progress response's furthest-reached position.
+// Best-effort telemetry: a ping to an already-completed response is a silent
+// no-op (a final ping legitimately races Submit); a ping to a non-existent or
+// malformed id is 404. A negative position clamps to 0.
+func (s *ResponseService) UpdateProgress(ctx context.Context, responseID string, position int) error {
+	if position < 0 {
+		position = 0
+	}
+	_, exists, err := s.responses.AdvanceProgress(ctx, responseID, position)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return apperror.New(http.StatusNotFound, "RESPONSE_NOT_FOUND", "response not found")
+	}
+	return nil
 }
 
 // validateSubmission walks the form's questions in order. A reachable +

@@ -18,6 +18,13 @@ type SubmitResponseRequest struct {
 	Answers []SubmitAnswer `json:"answers" binding:"required"`
 }
 
+// ProgressRequest is the body for POST /public/forms/:slug/progress — a runner
+// beacon advancing an in-progress response's furthest-reached question position.
+type ProgressRequest struct {
+	ResponseID string `json:"response_id" binding:"required"`
+	Position   int    `json:"position"`
+}
+
 // PublicForm is the runner contract: everything the respondent UI needs and
 // nothing about the owner.
 type PublicForm struct {

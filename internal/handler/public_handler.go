@@ -52,3 +52,32 @@ func (h *PublicHandler) Submit(c *gin.Context) {
 	}
 	response.Created(c, gin.H{"response_id": id}, "response submitted")
 }
+
+// Start opens an in-progress response (paradata capture) and returns its id for
+// the runner to echo to Progress as the respondent navigates.
+func (h *PublicHandler) Start(c *gin.Context) {
+	meta := model.ResponseMeta{
+		UserAgent: c.Request.UserAgent(),
+		Referrer:  c.Request.Referer(),
+	}
+	id, err := h.svc.StartSession(c.Request.Context(), c.Param("slug"), meta)
+	if err != nil {
+		handleServiceError(c, err, "start response")
+		return
+	}
+	response.Created(c, gin.H{"response_id": id}, "session started")
+}
+
+// Progress advances an in-progress response's furthest-reached position.
+func (h *PublicHandler) Progress(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxSubmitBytes)
+	req, ok := bindJSON[dto.ProgressRequest](c)
+	if !ok {
+		return
+	}
+	if err := h.svc.UpdateProgress(c.Request.Context(), req.ResponseID, req.Position); err != nil {
+		handleServiceError(c, err, "update progress")
+		return
+	}
+	response.OK(c, gin.H{"ok": true}, "progress recorded")
+}
