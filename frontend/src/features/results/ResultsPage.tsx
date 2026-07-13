@@ -9,15 +9,16 @@ import { cn } from "@/lib/utils";
 import { formatAnswer } from "@/lib/formatAnswer";
 import { themeStyle } from "@/lib/themes";
 import { useForm } from "@/api/forms";
-import { csvUrl, useAnalytics, useDeleteResponses, useResponses } from "@/api/results";
+import { csvUrl, useAnalytics, useDeleteResponses, useFunnel, useResponses } from "@/api/results";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
-import type { AnswerValue, FormAnalytics, Question, ResponseItem } from "@/types/forms";
+import type { AnswerValue, FormAnalytics, FormFunnel, Question, ResponseItem } from "@/types/forms";
 
 export function ResultsPage() {
   const { id = "" } = useParams();
   const { data: form, isLoading } = useForm(id);
   useDocumentTitle("Hasil", form?.title);
   const analytics = useAnalytics(id);
+  const funnel = useFunnel(id);
   const responses = useResponses(id);
   const deleteResponses = useDeleteResponses(id);
   const [tab, setTab] = useState<"summary" | "responses">("summary");
@@ -78,13 +79,21 @@ export function ResultsPage() {
 
       <main className="mx-auto max-w-[980px] px-6 py-6">
         {tab === "summary" ? (
-          analytics.isLoading ? (
-            <p className="text-muted-foreground">Memuat…</p>
-          ) : analytics.data && analytics.data.response_count > 0 ? (
-            <AnalyticsView data={analytics.data} />
-          ) : (
-            <EmptyState />
-          )
+          <div className="space-y-4">
+            {funnel.isLoading ? (
+              <p className="text-muted-foreground">Memuat…</p>
+            ) : funnel.data ? (
+              <FunnelSection data={funnel.data} />
+            ) : null}
+
+            {analytics.isLoading ? (
+              <p className="text-muted-foreground">Memuat…</p>
+            ) : analytics.data && analytics.data.response_count > 0 ? (
+              <AnalyticsView data={analytics.data} />
+            ) : (
+              <EmptyState />
+            )}
+          </div>
         ) : responses.isLoading ? (
           <p className="text-muted-foreground">Memuat…</p>
         ) : responses.data && responses.data.length > 0 ? (
@@ -131,6 +140,51 @@ function EmptyState() {
   return (
     <Card className="rounded-2xl">
       <CardContent className="py-16 text-center text-muted-foreground">Belum ada respons.</CardContent>
+    </Card>
+  );
+}
+
+/** FunnelSection shows the drop-off funnel: one horizontal bar per question,
+ *  width proportional to reached/starts. `starts` counts every opened session
+ *  (completed + abandoned); guard against divide-by-zero when nobody has
+ *  started yet. */
+function FunnelSection({ data }: { data: FormFunnel }) {
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-3">
+        <CardTitle className="font-display text-lg font-medium">Funnel</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {data.starts === 0
+            ? "Belum ada sesi dibuka."
+            : `${data.starts} mulai · ${data.completed} selesai · ${Math.round(
+                (data.completed / data.starts) * 100,
+              )}% penyelesaian`}
+        </p>
+      </CardHeader>
+      <CardContent>
+        {data.starts === 0 ? (
+          <p className="text-sm text-muted-foreground">Belum ada data.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {data.steps.map((s) => {
+              const pct = (s.reached / data.starts) * 100;
+              return (
+                <div key={s.question_id} className="flex items-center gap-3 text-sm">
+                  <span className="w-32 shrink-0 truncate text-foreground" title={s.title || "Tanpa judul"}>
+                    {s.title || "Tanpa judul"}
+                  </span>
+                  <div className="h-6 flex-1 overflow-hidden rounded-lg bg-primary-soft">
+                    <div className="h-full rounded-lg bg-primary" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="w-24 shrink-0 text-right tabular-nums text-muted-foreground">
+                    {s.reached} · {Math.round(pct)}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }
