@@ -1,4 +1,4 @@
-.PHONY: run dev build fe-dev fe-build fe-test test lint check cover-check cover-update route-check verify-deploy readiness-score tidy migrate-new up down docker logs
+.PHONY: run dev build fe-dev fe-build fe-test test lint check cover-check cover-update route-check dod-check verify-deploy readiness-score tidy migrate-new up down docker logs
 
 # --- Go ---
 run: ## Run the API (loads .env if present; auto-runs migrations at boot)
@@ -29,6 +29,9 @@ cover-update: ## Re-bless the coverage baseline to current numbers
 route-check: ## Hard gate: every registered route has an FR endpoint or a waiver
 	python3 scripts/route_check.py
 
+dod-check: ## DoD gate: behavior-layer change must ship a test + FR touch (waive: DoD-Skip trailer)
+	python3 scripts/dod_check.py
+
 verify-deploy: ## Post-deploy smoke: container up -> local /health -> public edge (run on prod host)
 	bash scripts/verify-deploy.sh
 
@@ -41,6 +44,7 @@ check: ## Umbrella red/green: lint + unit tests + coverage + routes + docs + FE 
 		echo "== go unit tests ==";    go test ./... -short; \
 		echo "== coverage ratchet =="; $(MAKE) -s cover-check; \
 		echo "== route -> FR ==";      $(MAKE) -s route-check; \
+		echo "== definition of done =="; $(MAKE) -s dod-check; \
 		echo "== docs ==";             $(MAKE) -s docs-check; \
 		echo "== frontend unit ==";    $(MAKE) -s fe-test; \
 		echo "== frontend build ==";   npm --prefix frontend run build; \

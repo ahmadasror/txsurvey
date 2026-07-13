@@ -53,7 +53,11 @@ jobs:
     name: Gates — make check (parity, coverage, routes, docs, FE)
     runs-on: ubuntu-latest
     steps:
+      # Full history + main ref so the DoD gate (make check) can diff this
+      # branch against its base; a shallow clone would make it silently no-op.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v6
         with:
