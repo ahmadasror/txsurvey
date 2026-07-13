@@ -22,6 +22,7 @@ type responseWriter interface {
 	Insert(ctx context.Context, formID string, completed bool, meta model.ResponseMeta, answers []model.Answer) (string, error)
 	StartSession(ctx context.Context, formID string, meta model.ResponseMeta) (string, error)
 	AdvanceProgress(ctx context.Context, responseID string, position int) (matched, exists bool, err error)
+	FinalizeSession(ctx context.Context, responseID, formID string, meta model.ResponseMeta, answers []model.Answer) (bool, error)
 }
 
 // ResponseService serves the public runner: form fetch by slug and submission
@@ -90,6 +91,20 @@ func (s *ResponseService) Submit(ctx context.Context, slug string, req dto.Submi
 	stored, err := s.validateSubmission(questions, submitted, reachable)
 	if err != nil {
 		return "", err
+	}
+
+	// If the runner opened a paradata session, finalize that in-progress row so
+	// the completed respondent leaves ONE row (not a completed row + an orphaned
+	// in-progress ghost that would skew the drop-off funnel). A mismatched/stale
+	// id finalizes nothing → fall back to inserting a fresh completed row.
+	if req.ResponseID != "" {
+		finalized, err := s.responses.FinalizeSession(ctx, req.ResponseID, form.ID, meta, stored)
+		if err != nil {
+			return "", err
+		}
+		if finalized {
+			return req.ResponseID, nil
+		}
 	}
 
 	return s.responses.Insert(ctx, form.ID, true, meta, stored)

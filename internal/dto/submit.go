@@ -14,8 +14,13 @@ type SubmitAnswer struct {
 }
 
 // SubmitResponseRequest is the body for POST /public/forms/:slug/responses.
+// ResponseID is optional: when the runner opened a paradata session (POST
+// /start), it echoes that id here so Submit finalizes that in-progress row instead
+// of inserting a new one — keeping one row per respondent. Absent (no-JS / old
+// client / start failed) → a fresh completed row is inserted, exactly as before.
 type SubmitResponseRequest struct {
-	Answers []SubmitAnswer `json:"answers" binding:"required"`
+	ResponseID string         `json:"response_id"`
+	Answers    []SubmitAnswer `json:"answers" binding:"required"`
 }
 
 // ProgressRequest is the body for POST /public/forms/:slug/progress — a runner

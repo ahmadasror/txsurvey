@@ -40,6 +40,9 @@ func (f *fakeResponses) AdvanceProgress(_ context.Context, _ string, position in
 	f.gotPos = position
 	return f.advMatched, f.advExists, f.advErr
 }
+func (f *fakeResponses) FinalizeSession(context.Context, string, string, model.ResponseMeta, []model.Answer) (bool, error) {
+	return false, nil
+}
 
 func codeOf(t *testing.T, err error) string {
 	t.Helper()

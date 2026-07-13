@@ -67,6 +67,16 @@ func (h *ResultsHandler) Analytics(c *gin.Context) {
 	response.OK(c, a, "ok")
 }
 
+// Funnel returns the response drop-off funnel (per-question retention).
+func (h *ResultsHandler) Funnel(c *gin.Context) {
+	f, err := h.svc.Funnel(c.Request.Context(), userID(c), c.Param("id"))
+	if err != nil {
+		handleServiceError(c, err, "funnel")
+		return
+	}
+	response.OK(c, f, "ok")
+}
+
 // ExportCSV buffers the CSV first so any error still yields a clean JSON error
 // (headers aren't committed until the whole file is built).
 func (h *ResultsHandler) ExportCSV(c *gin.Context) {

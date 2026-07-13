@@ -60,6 +60,102 @@ func (r *ResponseRepo) Insert(ctx context.Context, formID string, completed bool
 	return responseID, nil
 }
 
+// FinalizeSession turns an in-progress paradata row (opened by StartSession) into
+// a completed submission: it stamps completed/submitted/completed_at, refreshes
+// meta, and attaches the answers — all in one transaction. This reconciles the
+// runner's start-row with its submission so a completed respondent leaves ONE row,
+// not a completed row PLUS an orphaned in-progress ghost (which would inflate the
+// drop-off funnel by counting every completer as an abandoner too).
+//
+// Returns finalized=false (no error) when responseID does not match a still-in-
+// progress row of THIS form — a bogus/stale id, an already-completed row, a cross-
+// form id, or a malformed (non-UUID) id — so the caller falls back to a plain
+// Insert of a fresh completed row (the no-paradata path is unchanged).
+func (r *ResponseRepo) FinalizeSession(ctx context.Context, responseID, formID string, meta model.ResponseMeta, answers []model.Answer) (bool, error) {
+	metaJSON, err := json.Marshal(meta)
+	if err != nil {
+		return false, fmt.Errorf("encode response meta: %w", err)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return false, fmt.Errorf("begin finalize tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	tag, err := tx.Exec(ctx,
+		`UPDATE responses
+		    SET completed = true, meta = $3,
+		        submitted_at = now(), completed_at = now(), last_seen_at = now()
+		  WHERE id = $1 AND form_id = $2 AND NOT completed`,
+		responseID, formID, metaJSON)
+	if err != nil {
+		// A malformed (non-UUID) id can't match any row; treat it as "not
+		// finalized" so the caller inserts a fresh completed row instead of 500ing.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+			return false, nil
+		}
+		return false, fmt.Errorf("finalize response: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return false, nil
+	}
+
+	for _, a := range answers {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO answers (response_id, question_id, value) VALUES ($1, $2, $3)`,
+			responseID, a.QuestionID, []byte(a.Value),
+		); err != nil {
+			return false, fmt.Errorf("insert answer: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, fmt.Errorf("commit finalize: %w", err)
+	}
+	return true, nil
+}
+
+// FunnelData is the raw aggregate the drop-off funnel is built from: total
+// sessions started, how many completed, and — among the still-in-progress
+// (abandoned) sessions — a histogram of the furthest question position reached.
+type FunnelData struct {
+	Starts    int
+	Completed int
+	// AbandonedAt[p] = in-progress sessions whose furthest_position is exactly p.
+	AbandonedAt map[int]int
+}
+
+// FunnelByForm returns the drop-off aggregates for a form: every response row
+// counts as a "start", completed rows are the finishers, and the non-completed
+// rows are bucketed by furthest_position (the abandonment histogram). Aggregation
+// into per-question retention happens in Go (ResultsService.buildFunnel), matching
+// the analytics convention of not doing this in JSONB SQL.
+func (r *ResponseRepo) FunnelByForm(ctx context.Context, formID string) (FunnelData, error) {
+	d := FunnelData{AbandonedAt: map[int]int{}}
+	if err := r.pool.QueryRow(ctx,
+		`SELECT count(*), count(*) FILTER (WHERE completed)
+		   FROM responses WHERE form_id = $1`, formID).Scan(&d.Starts, &d.Completed); err != nil {
+		return d, fmt.Errorf("funnel totals: %w", err)
+	}
+	rows, err := r.pool.Query(ctx,
+		`SELECT furthest_position, count(*) FROM responses
+		  WHERE form_id = $1 AND NOT completed GROUP BY furthest_position`, formID)
+	if err != nil {
+		return d, fmt.Errorf("funnel histogram: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pos, n int
+		if err := rows.Scan(&pos, &n); err != nil {
+			return d, fmt.Errorf("scan funnel bucket: %w", err)
+		}
+		d.AbandonedAt[pos] = n
+	}
+	return d, rows.Err()
+}
+
 // CountByForm returns the number of COMPLETED responses for a form. In-progress
 // paradata rows (completed=false, written by StartSession) are excluded so this
 // count — used as the owner's response total and the completion-rate denominator
