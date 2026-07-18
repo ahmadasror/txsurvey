@@ -11,12 +11,14 @@ import { themeStyle } from "@/lib/themes";
 import { useForm } from "@/api/forms";
 import { csvUrl, useAnalytics, useDeleteResponses, useFunnel, useResponses } from "@/api/results";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { useOptionalFonts } from "@/lib/useOptionalFonts";
 import type { AnswerValue, FormAnalytics, FormFunnel, Question, ResponseItem } from "@/types/forms";
 
 export function ResultsPage() {
   const { id = "" } = useParams();
   const { data: form, isLoading } = useForm(id);
   useDocumentTitle("Hasil", form?.title);
+  useOptionalFonts(form?.settings.font);
   const analytics = useAnalytics(id);
   const funnel = useFunnel(id);
   const responses = useResponses(id);
@@ -33,7 +35,7 @@ export function ResultsPage() {
       <div className="border-b bg-card">
         <div className="mx-auto flex max-w-[980px] flex-wrap items-center gap-3 px-6 py-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/" aria-label="Kembali ke survei">
+            <Link to="/app" aria-label="Kembali ke survei">
               <ArrowLeft />
             </Link>
           </Button>

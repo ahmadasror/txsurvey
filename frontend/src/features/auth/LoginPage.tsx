@@ -3,9 +3,10 @@ import { Link, Navigate } from "react-router-dom";
 import { Check, Loader2 } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
-import { loginUrl } from "@/api/client";
+import { api, loginUrl } from "@/api/client";
 import { useMe } from "@/api/auth";
-import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { appPath } from "@/lib/paths";
+import { usePageMetadata } from "@/lib/usePageMetadata";
 
 const VALUE_PROPS = [
   "Satu pertanyaan per layar — terasa seperti ngobrol.",
@@ -15,16 +16,37 @@ const VALUE_PROPS = [
 ];
 
 export function LoginPage() {
-  useDocumentTitle("Masuk");
+  usePageMetadata({
+    title: "Masuk",
+    description: "Masuk ke txsurvey untuk membuat survei, mengatur logika bercabang, dan membaca hasil respons.",
+    robots: "noindex, nofollow",
+  });
   const { data: user, isLoading } = useMe();
   const [connecting, setConnecting] = useState(false);
+  const [devConnecting, setDevConnecting] = useState(false);
+  const [devError, setDevError] = useState("");
 
   if (isLoading) return <FullScreenLoader />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/app" replace />;
 
   const connect = () => {
     setConnecting(true);
     window.location.href = loginUrl();
+  };
+
+  const connectAsDeveloper = async () => {
+    setDevConnecting(true);
+    setDevError("");
+    try {
+      await api("/auth/dev-login", {
+        method: "POST",
+        body: JSON.stringify({ email: "dev@txsurvey.local", name: "Local Developer" }),
+      });
+      window.location.href = appPath;
+    } catch {
+      setDevError("Dev login gagal. Pastikan backend berjalan dalam mode development.");
+      setDevConnecting(false);
+    }
   };
 
   return (
@@ -100,6 +122,25 @@ export function LoginPage() {
             )}
           </button>
 
+          {import.meta.env.DEV && (
+            <div className="mt-3">
+              <button
+                onClick={connectAsDeveloper}
+                disabled={devConnecting || connecting}
+                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-primary-soft text-sm font-medium text-primary transition-colors hover:bg-primary/15 disabled:opacity-70"
+              >
+                {devConnecting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Menyiapkan akun…
+                  </>
+                ) : (
+                  "Masuk sebagai Developer"
+                )}
+              </button>
+              {devError && <p className="mt-2 text-center text-xs text-destructive">{devError}</p>}
+            </div>
+          )}
+
           <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
             gratis & cepat
@@ -121,6 +162,12 @@ export function LoginPage() {
             </Link>
             .
           </p>
+          <nav className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs" aria-label="Pelajari txsurvey">
+            <Link to="/contoh-template-survei" className="font-medium text-primary hover:underline">Template survei</Link>
+            <Link to="/fitur/logika-bercabang" className="font-medium text-primary hover:underline">Logika bercabang</Link>
+            <Link to="/fitur/survei-anonim" className="font-medium text-primary hover:underline">Survei anonim</Link>
+            <Link to="/panduan" className="font-medium text-primary hover:underline">Panduan</Link>
+          </nav>
         </div>
       </section>
     </div>

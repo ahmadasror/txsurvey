@@ -91,8 +91,9 @@ and **public** (anonymous, rate-limited). Every form-scoped repo query carries
   fonts load via Google Fonts in `index.html`. Runner/Builder/Results wrap their root in `themeStyle(...)`;
   Dashboard/Login/Legal use the `:root` default. `settings.font` is a plain JSONB field — no migration.
 
-- **SPA routes (`router.tsx`):** public `/login`, `/legal`, `/r/:slug` (runner) sit outside the auth guard;
-  `/`, `/templates` are under `DashboardLayout`; `/forms/:id` and `/forms/:id/results` are full-bleed.
+- **SPA routes (`router.tsx`):** public `/` (landing), `/login`, `/legal`, `/r/:slug` (runner), SEO template/feature pages,
+  and `/panduan` sit outside the auth guard; `/app` and `/templates` are under `DashboardLayout`; `/forms/:id` and
+  `/forms/:id/results` are full-bleed. Production Go serving enriches known routes with first-response SEO metadata/content.
   `TemplatesPage` seeds a draft form (create → PATCH settings → POST each question) then opens the Builder —
   it relies on the backend auto-filling empty option ids (`question_service.go`).
 

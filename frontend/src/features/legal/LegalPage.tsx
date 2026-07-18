@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/components/BrandMark";
 import { cn } from "@/lib/utils";
-import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { usePageMetadata } from "@/lib/usePageMetadata";
 
 const UPDATED = "25 Juni 2026";
 
@@ -79,7 +79,12 @@ const PRIVACY: Section[] = [
 
 export function LegalPage() {
   const [tab, setTab] = useState<"terms" | "privacy">("terms");
-  useDocumentTitle(tab === "terms" ? "Ketentuan Layanan" : "Kebijakan Privasi");
+  usePageMetadata({
+    title: tab === "terms" ? "Ketentuan Layanan" : "Kebijakan Privasi",
+    description: "Ketentuan layanan dan kebijakan privasi txsurvey untuk creator dan responden survei.",
+    robots: "index, follow",
+    path: "legal",
+  });
   const sections = tab === "terms" ? TERMS : PRIVACY;
 
   return (

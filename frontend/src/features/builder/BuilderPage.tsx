@@ -15,6 +15,7 @@ import { QUESTION_TYPES, typeDef } from "@/lib/questionTypes";
 import { themeStyle } from "@/lib/themes";
 import { runnerPath, runnerUrl } from "@/lib/paths";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { useOptionalFonts } from "@/lib/useOptionalFonts";
 import {
   useAddQuestion,
   useForm,
@@ -29,6 +30,7 @@ export function BuilderPage() {
   const navigate = useNavigate();
   const { data: form, isLoading, isError } = useForm(id);
   useDocumentTitle(form?.title);
+  useOptionalFonts(form?.settings.font);
 
   const updateForm = useUpdateForm(id);
   const publish = usePublishForm(id);
@@ -67,7 +69,7 @@ export function BuilderPage() {
     return (
       <main className="container max-w-3xl py-20 text-center">
         <p className="text-muted-foreground">Form not found.</p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate("/")}>
+        <Button variant="outline" className="mt-4" onClick={() => navigate("/app")}>
           <ArrowLeft /> Back to forms
         </Button>
       </main>
@@ -106,7 +108,7 @@ export function BuilderPage() {
       {/* Builder header */}
       <div className="border-b bg-card">
         <div className="container flex flex-wrap items-center gap-3 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Kembali">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Kembali">
             <ArrowLeft />
           </Button>
           <Input

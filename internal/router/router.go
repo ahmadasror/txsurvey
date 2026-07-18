@@ -68,29 +68,69 @@ func Setup(cfg *config.Config, h *Handlers, jwtMgr *auth.JWTManager) *gin.Engine
 	// Serve the embedded SPA when present (production `-tags embedspa` build).
 	// In dev the SPA runs on Vite and this is a no-op.
 	if distFS, ok := web.DistFS(); ok {
-		serveSPA(r, distFS)
+		serveSPA(r, distFS, cfg.AppBaseURL)
 	}
 	return r
 }
 
 // serveSPA serves static assets from the embedded dist, falling back to
 // index.html for any non-API, non-asset path so client-side routing works.
-func serveSPA(r *gin.Engine, dist fs.FS) {
+func serveSPA(r *gin.Engine, dist fs.FS, appBaseURL string) {
 	fileServer := http.FileServer(http.FS(dist))
+	indexHTML, err := fs.ReadFile(dist, "index.html")
+	if err != nil {
+		return
+	}
 	r.NoRoute(func(c *gin.Context) {
 		p := c.Request.URL.Path
 		if strings.HasPrefix(p, "/api/") {
 			response.Error(c, http.StatusNotFound, "NOT_FOUND", "not found")
 			return
 		}
+		if p != "/" && strings.HasSuffix(p, "/") {
+			target := strings.TrimRight(p, "/")
+			if c.Request.URL.RawQuery != "" {
+				target += "?" + c.Request.URL.RawQuery
+			}
+			c.Redirect(http.StatusMovedPermanently, target)
+			return
+		}
+		if p == "/sitemap.xml" {
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Data(http.StatusOK, "application/xml; charset=utf-8", sitemapXML(appBaseURL))
+			return
+		}
+		if p == "/robots.txt" {
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Data(http.StatusOK, "text/plain; charset=utf-8", robotsText(appBaseURL))
+			return
+		}
 		if trimmed := strings.TrimPrefix(path.Clean(p), "/"); trimmed != "" {
 			if f, err := dist.Open(trimmed); err == nil {
 				_ = f.Close()
+				if strings.HasPrefix(p, "/assets/") {
+					c.Header("Cache-Control", "public, max-age=31536000, immutable")
+				} else {
+					c.Header("Cache-Control", "public, max-age=604800")
+				}
 				fileServer.ServeHTTP(c.Writer, c.Request)
 				return
 			}
 		}
-		c.Request.URL.Path = "/" // SPA fallback -> index.html
-		fileServer.ServeHTTP(c.Writer, c.Request)
+
+		page, known := seoPageForPath(p)
+		status := http.StatusOK
+		if !known {
+			status = http.StatusNotFound
+			page = seoPage{
+				Title:       "Halaman Tidak Ditemukan · txsurvey",
+				Description: "Halaman yang kamu cari tidak tersedia.",
+				Robots:      "noindex, nofollow",
+				Heading:     "Halaman tidak ditemukan.",
+				Summary:     "Tautannya mungkin keliru atau halaman sudah dipindahkan.",
+			}
+		}
+		c.Header("Cache-Control", "no-cache")
+		c.Data(status, "text/html; charset=utf-8", renderSEOHTML(indexHTML, page, appBaseURL))
 	})
 }

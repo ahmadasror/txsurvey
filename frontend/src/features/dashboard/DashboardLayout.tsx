@@ -14,12 +14,12 @@ export function DashboardLayout() {
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-10 border-b bg-card">
         <div className="mx-auto flex h-[60px] max-w-[980px] items-center gap-6 px-6">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/app" className="flex items-center gap-2.5">
             <BrandMark size={30} />
             <span className="font-display text-lg text-foreground">txsurvey</span>
           </Link>
           <nav className="flex items-center gap-1 text-sm">
-            <NavItem to="/" end>
+            <NavItem to="/app" end>
               Survei
             </NavItem>
             <NavItem to="/templates">Template</NavItem>

@@ -1,19 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>txsurvey</title>
-    <!-- Soft Studio type system: Newsreader/Spectral/Bricolage (display) + Hanken Grotesk (UI). -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- txsurvey:seo -->
+    <!-- Default type system. Optional survey fonts load only on routes that use them. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Hanken+Grotesk:wght@400..800&family=Newsreader:opsz,wght@6..72,400..600&family=Spectral:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..800&family=Newsreader:opsz,wght@6..72,400..600&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!-- txsurvey:prerender --></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

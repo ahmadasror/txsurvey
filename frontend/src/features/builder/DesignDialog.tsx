@@ -20,6 +20,7 @@ import { assetUrl } from "@/lib/paths";
 import { DEFAULT_FONT_ID, DEFAULT_THEME_ID, FONT_PRESETS, themeStyle } from "@/lib/themes";
 import { runnerUrl } from "@/lib/paths";
 import { useUpdateForm, useUploadAsset } from "@/api/forms";
+import { useOptionalFonts } from "@/lib/useOptionalFonts";
 import type { Form, FormSettings } from "@/types/forms";
 
 /** cleanSlug mirrors the backend slugify enough for a live URL preview. */
@@ -35,6 +36,7 @@ export function DesignDialog({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  useOptionalFonts(...(open ? ["modern", "serif"] : []));
   const update = useUpdateForm(form.id);
   const [s, setS] = useState<FormSettings>(form.settings);
   const [slug, setSlug] = useState(form.slug);

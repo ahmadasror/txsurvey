@@ -36,5 +36,6 @@ docs/
 - `fr/survey/active/fr-forms.md` — forms + questions + logic-rule CRUD + publish
 - `fr/survey/active/fr-runner.md` — public runner: fetch + logic-aware submit
 - `fr/survey/active/fr-results.md` — responses, analytics, CSV export
+- `fr/survey/active/fr-seo-discovery.md` — indexing policy, public discovery pages, route metadata
 
 These were backfilled to seed traceability for the already-built code (code-first is the norm here).

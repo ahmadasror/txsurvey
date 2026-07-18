@@ -15,6 +15,9 @@ export const routerBasename = BASE === "/" ? undefined : BASE.replace(/\/$/, "")
 /** App home (creator dashboard / login), prefix-aware. */
 export const homePath = BASE;
 
+/** Creator workspace home, prefix-aware. */
+export const appPath = `${BASE}app`;
+
 /** Public runner path (in-app, prefix-aware) for a form slug. */
 export const runnerPath = (slug: string) => `${BASE}r/${slug}`;
 

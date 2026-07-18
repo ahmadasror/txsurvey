@@ -9,7 +9,8 @@ import { QuestionScreen } from "@/features/runner/QuestionScreen";
 import { pingProgress, startResponseSession, usePublicForm, useSubmitResponse, type SubmitAnswer } from "@/api/public";
 import { themeStyle } from "@/lib/themes";
 import { assetUrl, homePath } from "@/lib/paths";
-import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { usePageMetadata } from "@/lib/usePageMetadata";
+import { useOptionalFonts } from "@/lib/useOptionalFonts";
 import { firstQuestionId, nextQuestionId, reachablePath } from "@/lib/logicEngine";
 import type { AnswerValue, LogicRule, Question } from "@/types/forms";
 
@@ -24,7 +25,12 @@ const isEmpty = (v: AnswerValue | undefined): boolean =>
 export function RunnerPage() {
   const { slug = "" } = useParams();
   const { data: form, isLoading, isError } = usePublicForm(slug);
-  useDocumentTitle(form?.settings.welcome_title || form?.title);
+  usePageMetadata({
+    title: form?.settings.welcome_title || form?.title || "Survei",
+    description: form?.settings.welcome_description || form?.description || "Survei online dibuat dengan txsurvey.",
+    robots: "noindex, nofollow",
+  });
+  useOptionalFonts(form?.settings.font);
   const submit = useSubmitResponse(slug);
 
   const [started, setStarted] = useState(false);
