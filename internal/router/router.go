@@ -105,7 +105,7 @@ func serveSPA(r *gin.Engine, dist fs.FS, appBaseURL string) {
 			c.Data(http.StatusOK, "text/plain; charset=utf-8", robotsText(appBaseURL))
 			return
 		}
-		if trimmed := strings.TrimPrefix(path.Clean(p), "/"); trimmed != "" {
+		if trimmed := strings.TrimPrefix(path.Clean(p), "/"); trimmed != "" && trimmed != "index.html" {
 			if f, err := dist.Open(trimmed); err == nil {
 				_ = f.Close()
 				if strings.HasPrefix(p, "/assets/") {
@@ -118,7 +118,11 @@ func serveSPA(r *gin.Engine, dist fs.FS, appBaseURL string) {
 			}
 		}
 
-		page, known := seoPageForPath(p)
+		lookupPath := p
+		if lookupPath == "/index.html" {
+			lookupPath = "/"
+		}
+		page, known := seoPageForPath(lookupPath)
 		status := http.StatusOK
 		if !known {
 			status = http.StatusNotFound

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -50,7 +51,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 	h.setSessionCookie(c, token, int(h.jwt.TTL().Seconds()))
-	c.Redirect(http.StatusFound, h.cfg.AppBaseURL)
+	c.Redirect(http.StatusFound, strings.TrimRight(h.cfg.AppBaseURL, "/")+"/app")
 }
 
 // Logout revokes the current session token (so it can't be replayed even if it

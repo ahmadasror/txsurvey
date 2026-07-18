@@ -98,8 +98,14 @@ func seoPageForPath(requestPath string) (seoPage, bool) {
 	// Application and respondent surfaces are valid SPA routes but deliberately
 	// excluded from search. Dynamic survey content is user-generated and can be
 	// sensitive, so it never receives a server canonical or share preview.
+	//
+	// /fitur/ is also a live React route (frontend/src/features/marketing/FeaturePage.tsx,
+	// path "/fitur/:featureSlug") with its own content list; any slug not mirrored above
+	// as a dedicated indexableSEOPages entry falls back to noindex 200 here rather than a
+	// hard 404, so a frontend-only feature page addition degrades gracefully instead of
+	// breaking the first server response for crawlers/share bots.
 	if requestPath == "/login" || requestPath == "/app" || requestPath == "/templates" ||
-		strings.HasPrefix(requestPath, "/forms/") ||
+		strings.HasPrefix(requestPath, "/forms/") || strings.HasPrefix(requestPath, "/fitur/") ||
 		(strings.HasPrefix(requestPath, "/r/") && len(strings.TrimPrefix(requestPath, "/r/")) > 0) {
 		return seoPage{
 			Title:       "txsurvey",

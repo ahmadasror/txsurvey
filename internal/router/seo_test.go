@@ -45,6 +45,42 @@ func TestSEOIndexablePageFirstResponse(t *testing.T) {
 	}
 }
 
+func TestSEOIndexHTMLMatchesRootResponse(t *testing.T) {
+	r := seoTestRouter(t)
+
+	root := httptest.NewRecorder()
+	r.ServeHTTP(root, httptest.NewRequest(http.MethodGet, "/", nil))
+	if root.Code != http.StatusOK || root.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("/ response = %d %q", root.Code, root.Header().Get("Cache-Control"))
+	}
+
+	indexHTMLResp := httptest.NewRecorder()
+	r.ServeHTTP(indexHTMLResp, httptest.NewRequest(http.MethodGet, "/index.html", nil))
+	if indexHTMLResp.Code != http.StatusOK || indexHTMLResp.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("/index.html response = %d %q, want the same SEO-enriched no-cache response as /", indexHTMLResp.Code, indexHTMLResp.Header().Get("Cache-Control"))
+	}
+	if indexHTMLResp.Body.String() != root.Body.String() {
+		t.Fatal("/index.html must render the same SEO-enriched body as /, not the raw static file")
+	}
+}
+
+func TestSEOUnknownFeatureSlugIsNoIndexNotFound(t *testing.T) {
+	r := seoTestRouter(t)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/fitur/does-not-exist", nil))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (soft noindex, not a hard 404)", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `content="noindex, nofollow"`) {
+		t.Fatal("unmirrored /fitur/ slug must be noindex")
+	}
+	if strings.Contains(body, `rel="canonical"`) {
+		t.Fatal("unmirrored /fitur/ slug must not publish a canonical")
+	}
+}
+
 func TestSEOPrivateRouteIsNoIndex(t *testing.T) {
 	r := seoTestRouter(t)
 	w := httptest.NewRecorder()
